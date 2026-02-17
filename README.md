@@ -96,5 +96,5 @@ Default port in Docker is `7894`. Change it by setting `PORT` in your `.env` fil
 View logs:
 
 ```bash
-docker logs -f ai_exam_system
+docker compose logs -f
 ```
