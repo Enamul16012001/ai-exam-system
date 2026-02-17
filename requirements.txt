@@ -2,9 +2,10 @@ fastapi
 uvicorn[standard]
 python-multipart
 jinja2
-google-generativeai
+google-genai
 pydantic
 python-jose[cryptography]
 passlib[bcrypt]
 aiofiles
+python-dotenv
 pytz

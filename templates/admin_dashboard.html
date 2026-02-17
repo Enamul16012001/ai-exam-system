@@ -4,352 +4,511 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Exam System</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
-
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: var(--color-bg);
             min-height: 100vh;
         }
-        
+
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
             color: white;
-            padding: 20px;
-            text-align: center;
+            padding: 20px 24px;
         }
-        
+
+        .header-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header .btn {
+            font-size: 0.8125rem;
+            padding: 8px 16px;
+        }
+
+        .btn-create {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.25);
+        }
+
+        .btn-create:hover {
+            background: rgba(255,255,255,0.25);
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-logout {
+            background: transparent;
+            color: rgba(255,255,255,0.7);
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+        }
+
+        .btn-logout:hover {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 24px;
         }
-        
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            padding: 24px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-xs);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Sections */
         .section {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xs);
+            margin-bottom: 24px;
             overflow: hidden;
         }
-        
+
         .section-header {
-            background: #f8f9ff;
-            padding: 20px;
-            border-bottom: 2px solid #e1e5e9;
+            background: var(--color-bg-subtle);
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--color-border);
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
         }
-        
+
         .section-title {
-            font-size: 1.3rem;
-            color: #333;
-            font-weight: 600;
+            font-size: 0.9375rem;
+            color: var(--color-text);
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
-        
+
         .section-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
+
+        .exam-count-badge {
+            background: var(--color-primary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
             font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s ease;
-            font-size: 0.9rem;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-        
-        .btn-warning {
-            background: #f59e0b;
-            color: white;
-        }
-        
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-        
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-        }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn.active {
-            background: #1f2937;
-            color: white;
-        }
-        
+
+        /* Table */
         .table {
             width: 100%;
             border-collapse: collapse;
         }
-        
+
         .table th,
         .table td {
-            padding: 15px;
+            padding: 12px 16px;
             text-align: left;
-            border-bottom: 1px solid #f0f0f0;
+            border-bottom: 1px solid var(--color-border-light);
         }
-        
+
         .table th {
-            background: #f8f9ff;
+            background: var(--color-bg-subtle);
             font-weight: 600;
-            color: #333;
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
-        
+
         .table tr:hover {
-            background: #f8f9ff;
+            background: var(--color-bg);
         }
-        
+
         .table tr.pinned {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border-left: 4px solid #3b82f6;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
+            background: var(--color-info-bg);
+            border-left: 3px solid var(--color-info);
         }
-        
+
         .table tr.pinned:hover {
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+            background: #e0f2fe;
         }
-        
+
         .pin-indicator {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            gap: 4px;
+            background: var(--color-info);
             color: white;
-            padding: 3px 10px;
-            border-radius: 15px;
-            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-size: 0.6875rem;
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
-        }
-        
-        .status-badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-        
-        .status-active {
-            background: #d1fae5;
-            color: #065f46;
-        }
-        
-        .status-inactive {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-        
-        .status-draft {
-            background: #fef3c7;
-            color: #92400e;
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        
-        .action-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-view {
-            background: #8b5cf6;
-            color: white;
-        }
-        
-        .btn-edit {
-            background: #f59e0b;
-            color: white;
-        }
-        
-        .btn-link {
-            background: #06b6d4;
-            color: white;
-        }
-        
-        .btn-results {
-            background: #10b981;
-            color: white;
         }
 
-        .btn-print {
-            background: #17a2b8;
-            color: white;
+        /* Status badges */
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: var(--radius-full);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
         }
+
+        .status-active {
+            background: var(--color-success-bg);
+            color: var(--color-success);
+        }
+
+        .status-inactive {
+            background: var(--color-danger-bg);
+            color: var(--color-danger);
+        }
+
+        .status-draft {
+            background: var(--color-warning-bg);
+            color: var(--color-warning);
+        }
+
+        /* Action buttons */
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .action-btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn-view { background: var(--color-primary); color: white; }
+        .btn-edit { background: var(--color-warning); color: white; }
+        .btn-link { background: #0891b2; color: white; }
+        .btn-results { background: var(--color-success); color: white; }
+        .btn-print { background: #475569; color: white; }
+        .btn-danger { background: var(--color-danger); color: white; }
 
         .pin-btn {
             background: transparent;
-            border: 2px solid #3b82f6;
-            color: #3b82f6;
-            padding: 4px 8px;
-            border-radius: 6px;
+            border: 1.5px solid var(--color-border);
+            color: var(--color-text-muted);
+            padding: 4px 6px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            transition: all var(--transition-fast);
+            display: inline-flex;
+            align-items: center;
         }
-        
+
         .pin-btn.pinned {
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            background: var(--color-info);
             color: white;
-            border-color: #1e40af;
-            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            border-color: var(--color-info);
         }
-        
+
         .pin-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 3px 8px rgba(59, 130, 246, 0.2);
+            border-color: var(--color-info);
+            color: var(--color-info);
         }
-        
+
+        .pin-btn.pinned:hover {
+            color: white;
+        }
+
         .no-data {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: 48px 24px;
+            color: var(--color-text-muted);
         }
-        
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 2.2rem;
-            font-weight: bold;
-            color: #667eea;
+
+        .no-data h3 {
+            font-size: 1.125rem;
+            color: var(--color-text-secondary);
             margin-bottom: 8px;
         }
-        
-        .stat-label {
-            color: #666;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .exam-count-badge {
-            background: #667eea;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
+
+        /* Search */
         .search-box {
-            padding: 10px 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 1rem;
-            width: 250px;
-            transition: border-color 0.3s ease;
+            padding: 8px 12px;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-size: 0.8125rem;
+            width: 240px;
+            color: var(--color-text);
+            transition: border-color var(--transition-fast);
         }
-        
+
         .search-box:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
-        
+
         .filter-controls {
             display: flex;
-            gap: 10px;
+            gap: 8px;
             align-items: center;
             flex-wrap: wrap;
         }
-        
+
+        .hidden { display: none; }
+
+        .exam-id-cell {
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+        }
+
+        .exam-id-cell strong {
+            color: var(--color-primary);
+        }
+
+        .exam-id-cell .sub {
+            font-size: 0.6875rem;
+            color: var(--color-text-muted);
+            margin-top: 2px;
+        }
+
+        /* Performance badges for results */
+        .status-excellent { background: #d1fae5; color: #065f46; }
+        .status-good { background: #dbeafe; color: #1e40af; }
+        .status-average { background: #fef3c7; color: #92400e; }
+        .status-poor { background: #fee2e2; color: #991b1b; }
+
         @media (max-width: 768px) {
+            .header-inner {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+
             .section-header {
                 flex-direction: column;
                 align-items: stretch;
             }
-            
+
             .section-controls {
                 justify-content: center;
             }
-            
+
             .filter-controls {
                 justify-content: center;
             }
-            
+
             .search-box {
                 width: 100%;
                 max-width: 300px;
             }
         }
+
+        /* Print Modal */
+        .print-options-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        .print-options-content {
+            background: var(--color-surface);
+            margin: 15% auto;
+            width: 90%;
+            max-width: 420px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            animation: modalIn 0.2s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: translateY(-10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .print-options-header {
+            background: #475569;
+            color: white;
+            padding: 16px 20px;
+            border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .print-options-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .print-options-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--transition-fast);
+        }
+
+        .print-options-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .print-options-body {
+            padding: 20px;
+        }
+
+        .print-buttons-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .btn-print-action {
+            flex: 1;
+            padding: 12px 16px;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all var(--transition-base);
+            color: white;
+        }
+
+        .btn-print-questions {
+            background: var(--color-success);
+        }
+
+        .btn-print-questions:hover {
+            background: #047857;
+        }
+
+        .btn-print-with-answers {
+            background: var(--color-primary);
+        }
+
+        .btn-print-with-answers:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .print-info-note {
+            background: var(--color-warning-bg);
+            border: 1px solid var(--color-warning-border);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
+            margin-top: 12px;
+            font-size: 0.8125rem;
+            color: #92400e;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🔧 Admin Dashboard</h1>
-        <div style="margin-top: 15px;">
-            <a href="/admin/create-exam" class="btn btn-primary">➕ Create New Exam</a>
-            <a href="/admin/logout" class="btn" style="background: rgba(255,255,255,0.2); color: white; margin-left: 15px;">🚪 Logout</a>
+        <div class="header-inner">
+            <h1>Admin Dashboard</h1>
+            <div class="header-actions">
+                <a href="/admin/create-exam" class="btn btn-create">+ Create Exam</a>
+                <form method="POST" action="/admin/logout" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
         </div>
     </div>
-    
+
     <div class="container">
         <!-- Statistics -->
         <div class="stats-grid">
@@ -382,31 +541,31 @@
             <div class="section-header">
                 <div>
                     <h2 class="section-title">
-                        📋 Exam Management
+                        Exam Management
                         <span class="exam-count-badge" id="examCountBadge">{{ exams|length }} exams</span>
                     </h2>
                 </div>
                 <div class="section-controls">
                     <div class="filter-controls">
-                        <input type="text" class="search-box" id="searchInput" placeholder="🔍 Search by title, department, position, or ID...">
-                        <button class="btn btn-secondary" id="showPinnedBtn" onclick="togglePinnedView()">
-                            📌 Show Pinned (<span id="pinnedCount">0</span>)
+                        <input type="text" class="search-box" id="searchInput" placeholder="Search by title, department, or ID...">
+                        <button class="btn btn-sm btn-secondary" id="showPinnedBtn" onclick="togglePinnedView()">
+                            Pinned (<span id="pinnedCount">0</span>)
                         </button>
-                        <button class="btn btn-secondary" id="showAllBtn" onclick="showAllExams()" style="display: none;">
-                            📋 Show All
+                        <button class="btn btn-sm btn-secondary" id="showAllBtn" onclick="showAllExams()" style="display: none;">
+                            Show All
                         </button>
                     </div>
-                    <a href="/admin/create-exam" class="btn btn-primary">➕ Create New Exam</a>
+                    <a href="/admin/create-exam" class="btn btn-sm btn-primary">+ Create Exam</a>
                 </div>
             </div>
-            
+
             {% if exams %}
             <div style="overflow-x: auto;">
                 <table class="table">
                     <thead>
                         <tr>
                             <th style="width: 40px;">Pin</th>
-                            <th style="width: 120px;">Exam ID</th>
+                            <th style="width: 110px;">Exam ID</th>
                             <th>Exam Title</th>
                             <th>Department</th>
                             <th>Position</th>
@@ -420,23 +579,19 @@
                         <tr class="exam-row" data-exam-id="{{ exam.id }}" data-title="{{ exam.title.lower() }}" data-department="{{ exam.department.lower() }}" data-position="{{ exam.position.lower() }}" data-exam-id-text="{{ exam.id[:8] }}">
                             <td>
                                 <button class="pin-btn" onclick="togglePin('{{ exam.id }}')" title="Pin exam">
-                                    📌
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="17" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></svg>
                                 </button>
                             </td>
                             <td>
-                                <div style="font-family: 'Courier New', monospace; font-size: 0.85rem;">
-                                    <strong style="color: #667eea;">{{ exam.id[:8] }}</strong>
-                                    <div style="font-size: 0.7rem; color: #999; margin-top: 2px;">
-                                        {{ exam.id[8:16] if exam.id|length > 8 else '' }}
-                                    </div>
+                                <div class="exam-id-cell">
+                                    <strong>{{ exam.id[:8] }}</strong>
+                                    <div class="sub">{{ exam.id[8:16] if exam.id|length > 8 else '' }}</div>
                                 </div>
                             </td>
                             <td>
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div>
-                                        <strong>{{ exam.title }}</strong><br>
-                                        <small style="color: #666;">{{ exam.description[:50] if exam.description else 'No description' }}{% if exam.description and exam.description|length > 50 %}...{% endif %}</small>
-                                    </div>
+                                <div>
+                                    <strong>{{ exam.title }}</strong><br>
+                                    <span style="color: var(--color-text-muted); font-size: 0.8125rem;">{{ exam.description[:50] if exam.description else 'No description' }}{% if exam.description and exam.description|length > 50 %}...{% endif %}</span>
                                 </div>
                             </td>
                             <td>{{ exam.department }}</td>
@@ -450,32 +605,25 @@
                                 <span class="status-badge status-inactive">Inactive</span>
                                 {% endif %}
                             </td>
-                            <td>{{ exam.created_at.split(' ')[0] if exam.created_at else 'N/A' }}</td>
+                            <td style="font-size: 0.8125rem; color: var(--color-text-secondary);">{{ exam.created_at.split(' ')[0] if exam.created_at else 'N/A' }}</td>
                             <td>
                                 <div class="action-buttons">
                                     {% if not exam.is_finalized %}
-                                    <!-- Draft Exam Actions -->
-                                    <a href="/admin/edit-exam/{{ exam.id }}" class="action-btn btn-edit">✏️ Edit</a>
-                                    <button class="action-btn btn-print" onclick="openPrintOptions('{{ exam.id }}')">🖨️ Print</button>
-                                    <button class="action-btn btn-success" onclick="finalizeExam('{{ exam.id }}')">🚀 Finalize</button>
+                                    <a href="/admin/edit-exam/{{ exam.id }}" class="action-btn btn-edit">Edit</a>
+                                    <button class="action-btn btn-print" onclick="openPrintOptions('{{ exam.id }}')">Print</button>
+                                    <button class="action-btn btn-results" onclick="finalizeExam('{{ exam.id }}')">Finalize</button>
                                     {% else %}
-                                    <!-- Finalized Exam Actions -->
-                                    <a href="/admin/view-exam/{{ exam.id }}" class="action-btn btn-view">👁️ View & Edit</a>
-                                    <a href="/admin/exam-results/{{ exam.id }}" class="action-btn btn-results">📊 Results</a>
-                                    <button class="action-btn btn-print" onclick="openPrintOptions('{{ exam.id }}')">🖨️ Print</button>
-                                    <button class="action-btn btn-link" onclick="showExamLink('{{ exam.exam_link }}')">🔗 Link</button>
-
+                                    <a href="/admin/view-exam/{{ exam.id }}" class="action-btn btn-view">View</a>
+                                    <a href="/admin/exam-results/{{ exam.id }}" class="action-btn btn-results">Results</a>
+                                    <button class="action-btn btn-print" onclick="openPrintOptions('{{ exam.id }}')">Print</button>
+                                    <button class="action-btn btn-link" onclick="showExamLink('{{ exam.exam_link }}')">Link</button>
                                     {% if exam.is_active %}
-                                    <!-- Active Exam - Show Deactivate Button -->
-                                    <button class="action-btn btn-warning" onclick="toggleExamStatus('{{ exam.id }}', false)">⏸️ Deactivate</button>
+                                    <button class="action-btn" style="background: var(--color-warning); color: white;" onclick="toggleExamStatus('{{ exam.id }}', false)">Deactivate</button>
                                     {% else %}
-                                    <!-- Inactive Exam - Show Activate Button -->
-                                    <button class="action-btn btn-success" onclick="toggleExamStatus('{{ exam.id }}', true)">▶️ Activate</button>
+                                    <button class="action-btn btn-results" onclick="toggleExamStatus('{{ exam.id }}', true)">Activate</button>
                                     {% endif %}
                                     {% endif %}
-
-                                    <!-- Delete Button (Always Available) -->
-                                    <button class="action-btn btn-danger" onclick="deleteExam('{{ exam.id }}')">🗑️ Delete</button>
+                                    <button class="action-btn btn-danger" onclick="deleteExam('{{ exam.id }}')">Delete</button>
                                 </div>
                             </td>
                         </tr>
@@ -485,21 +633,21 @@
             </div>
             {% else %}
             <div class="no-data">
-                <h3>📭 No Exams Found</h3>
-                <p>Start by creating your first exam using the "Create New Exam" button above.</p>
+                <h3>No Exams Yet</h3>
+                <p>Create your first exam to get started.</p>
                 <br>
-                <a href="/admin/create-exam" class="btn btn-primary">➕ Create Your First Exam</a>
+                <a href="/admin/create-exam" class="btn btn-primary">Create Your First Exam</a>
             </div>
             {% endif %}
         </div>
-        
+
         <!-- Recent Results Section -->
         {% if recent_results %}
         <div class="section">
             <div class="section-header">
-                <h2 class="section-title">📈 Recent Exam Results</h2>
+                <h2 class="section-title">Recent Results</h2>
             </div>
-            
+
             <div style="overflow-x: auto;">
                 <table class="table">
                     <thead>
@@ -516,16 +664,16 @@
                         <tr>
                             <td>
                                 <strong>{{ result.candidate_name }}</strong><br>
-                                <small style="color: #666;">{{ result.candidate_id }}</small>
+                                <span style="color: var(--color-text-muted); font-size: 0.8125rem;">{{ result.candidate_id }}</span>
                             </td>
                             <td>{{ result.exam_title }}</td>
-                            <td>{{ "%.1f"|format(result.obtained_marks) }}/{{ result.total_marks }}</td>
+                            <td><strong>{{ "%.1f"|format(result.obtained_marks) }}</strong>/{{ result.total_marks }}</td>
                             <td>
                                 <span class="status-badge status-{{ result.performance_level.lower() }}">
                                     {{ result.performance_level }}
                                 </span>
                             </td>
-                            <td>{{ result.submitted_at.split(' ')[0] if result.submitted_at else 'N/A' }}</td>
+                            <td style="font-size: 0.8125rem; color: var(--color-text-secondary);">{{ result.submitted_at.split(' ')[0] if result.submitted_at else 'N/A' }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -534,19 +682,17 @@
         </div>
         {% endif %}
     </div>
-    
+
     <script>
-        // Pinning system
         let pinnedExams = JSON.parse(localStorage.getItem('pinnedExams') || '[]');
         let showingPinnedOnly = false;
-        
-        // Initialize pinned exams on page load
+
         document.addEventListener('DOMContentLoaded', function() {
             initializePinnedExams();
             updatePinnedCount();
             setupSearch();
         });
-        
+
         function initializePinnedExams() {
             pinnedExams.forEach(examId => {
                 const row = document.querySelector(`tr[data-exam-id="${examId}"]`);
@@ -557,117 +703,83 @@
                     pinBtn.title = 'Unpin exam';
                 }
             });
-            
-            // Sort pinned exams to top
             sortExamsByPinned();
         }
-        
+
         function togglePin(examId) {
             const row = document.querySelector(`tr[data-exam-id="${examId}"]`);
             const pinBtn = document.querySelector(`tr[data-exam-id="${examId}"] .pin-btn`);
-            
+
             if (pinnedExams.includes(examId)) {
-                // Unpin
                 pinnedExams = pinnedExams.filter(id => id !== examId);
                 row.classList.remove('pinned');
                 pinBtn.classList.remove('pinned');
                 pinBtn.title = 'Pin exam';
             } else {
-                // Pin
                 pinnedExams.push(examId);
                 row.classList.add('pinned');
                 pinBtn.classList.add('pinned');
                 pinBtn.title = 'Unpin exam';
             }
-            
+
             localStorage.setItem('pinnedExams', JSON.stringify(pinnedExams));
             updatePinnedCount();
-            
-            if (!showingPinnedOnly) {
-                sortExamsByPinned();
-            }
+            if (!showingPinnedOnly) sortExamsByPinned();
         }
-        
+
         function sortExamsByPinned() {
             const tbody = document.getElementById('examTableBody');
+            if (!tbody) return;
             const rows = Array.from(tbody.querySelectorAll('.exam-row'));
-            
             rows.sort((a, b) => {
-                const aIsPinned = pinnedExams.includes(a.dataset.examId);
-                const bIsPinned = pinnedExams.includes(b.dataset.examId);
-                
-                if (aIsPinned && !bIsPinned) return -1;
-                if (!aIsPinned && bIsPinned) return 1;
+                const aP = pinnedExams.includes(a.dataset.examId);
+                const bP = pinnedExams.includes(b.dataset.examId);
+                if (aP && !bP) return -1;
+                if (!aP && bP) return 1;
                 return 0;
             });
-            
             rows.forEach(row => tbody.appendChild(row));
         }
-        
+
         function togglePinnedView() {
             const rows = document.querySelectorAll('.exam-row');
-            const showPinnedBtn = document.getElementById('showPinnedBtn');
-            const showAllBtn = document.getElementById('showAllBtn');
-            
-            if (showingPinnedOnly) {
-                // Already showing pinned, this shouldn't happen
-                return;
-            }
-            
             showingPinnedOnly = true;
-            
             rows.forEach(row => {
                 if (!pinnedExams.includes(row.dataset.examId)) {
                     row.style.display = 'none';
                 }
             });
-            
-            showPinnedBtn.style.display = 'none';
-            showAllBtn.style.display = 'inline-block';
-            
+            document.getElementById('showPinnedBtn').style.display = 'none';
+            document.getElementById('showAllBtn').style.display = 'inline-block';
             updateExamCount();
         }
-        
+
         function showAllExams() {
             const rows = document.querySelectorAll('.exam-row');
-            const showPinnedBtn = document.getElementById('showPinnedBtn');
-            const showAllBtn = document.getElementById('showAllBtn');
-            
             showingPinnedOnly = false;
-            
-            rows.forEach(row => {
-                row.style.display = '';
-            });
-            
-            showPinnedBtn.style.display = 'inline-block';
-            showAllBtn.style.display = 'none';
-            
+            rows.forEach(row => { row.style.display = ''; });
+            document.getElementById('showPinnedBtn').style.display = 'inline-block';
+            document.getElementById('showAllBtn').style.display = 'none';
             updateExamCount();
-            
-            // Clear search if active
             document.getElementById('searchInput').value = '';
         }
-        
+
         function updatePinnedCount() {
             document.getElementById('pinnedCount').textContent = pinnedExams.length;
         }
-        
+
         function updateExamCount() {
             const visibleRows = document.querySelectorAll('.exam-row:not([style*="display: none"])');
             const badge = document.getElementById('examCountBadge');
-            
             if (showingPinnedOnly) {
-                badge.textContent = `${visibleRows.length} pinned exams`;
-                badge.style.background = '#3b82f6';
+                badge.textContent = `${visibleRows.length} pinned`;
             } else {
                 badge.textContent = `${visibleRows.length} exams`;
-                badge.style.background = '#667eea';
             }
         }
 
         async function copyToClipboardSecure(text) {
             try {
-                // Try modern clipboard API first
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     await navigator.clipboard.writeText(text);
                     return true;
@@ -675,170 +787,124 @@
                     throw new Error('Clipboard API not available');
                 }
             } catch (err) {
-                console.log('Clipboard API failed, using fallback:', err);
                 return copyToClipboardFallback(text);
             }
         }
 
-        // Fallback method for clipboard copy
         function copyToClipboardFallback(text) {
             try {
-                // Create a temporary textarea element
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
                 textarea.style.position = 'fixed';
                 textarea.style.left = '-999999px';
-                textarea.style.top = '-999999px';
                 document.body.appendChild(textarea);
                 textarea.focus();
                 textarea.select();
-                
-                // Try to copy using execCommand
                 const successful = document.execCommand('copy');
                 document.body.removeChild(textarea);
-                
-                if (successful) {
-                    return true;
-                } else {
-                    throw new Error('execCommand failed');
-                }
+                return successful;
             } catch (err) {
-                console.error('Fallback copy failed:', err);
                 return false;
             }
         }
-        
-        // Search functionality
+
         function setupSearch() {
             const searchInput = document.getElementById('searchInput');
-            
+            if (!searchInput) return;
             searchInput.addEventListener('input', function() {
                 const searchTerm = this.value.toLowerCase().trim();
                 const rows = document.querySelectorAll('.exam-row');
-                
-                if (searchTerm === '') {
-                    // Show all rows (respecting pinned filter)
-                    rows.forEach(row => {
-                        if (showingPinnedOnly) {
-                            row.style.display = pinnedExams.includes(row.dataset.examId) ? '' : 'none';
-                        } else {
-                            row.style.display = '';
-                        }
-                    });
-                } else {
-                    // Filter by search term
-                    rows.forEach(row => {
-                        const title = row.dataset.title;
-                        const department = row.dataset.department;
-                        const position = row.dataset.position;
-                        const examId = row.dataset.examIdText || '';
-                        
-                        const matches = title.includes(searchTerm) || 
-                                      department.includes(searchTerm) || 
-                                      position.includes(searchTerm) ||
-                                      examId.includes(searchTerm);
-                        
+
+                rows.forEach(row => {
+                    if (searchTerm === '') {
+                        row.style.display = (showingPinnedOnly && !pinnedExams.includes(row.dataset.examId)) ? 'none' : '';
+                    } else {
+                        const matches = row.dataset.title.includes(searchTerm) ||
+                                       row.dataset.department.includes(searchTerm) ||
+                                       row.dataset.position.includes(searchTerm) ||
+                                       (row.dataset.examIdText || '').includes(searchTerm);
                         if (showingPinnedOnly) {
                             row.style.display = (matches && pinnedExams.includes(row.dataset.examId)) ? '' : 'none';
                         } else {
                             row.style.display = matches ? '' : 'none';
                         }
-                    });
-                }
-                
+                    }
+                });
                 updateExamCount();
             });
         }
-        
-        // Existing functions
+
         async function toggleExamStatus(examId, isActive) {
             const action = isActive ? 'activate' : 'deactivate';
-            const actionPast = isActive ? 'activated' : 'deactivated';
-            
-            if (confirm(`Are you sure you want to ${action} this exam?\n\n${isActive ? 'Candidates will be able to access the exam.' : 'The exam link will become inaccessible to candidates.'}`)) {
+            if (confirm(`Are you sure you want to ${action} this exam?`)) {
                 try {
                     const response = await fetch(`/api/toggle-exam-status/${examId}`, {
-                        method: 'POST',
-                        credentials: 'include',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        method: 'POST', credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ is_active: isActive })
                     });
-                    
                     if (response.ok) {
-                        alert(`✅ Exam ${actionPast} successfully!`);
+                        alert(`Exam ${action}d successfully.`);
                         location.reload();
                     } else {
                         const errorData = await response.json();
-                        throw new Error(errorData.error || 'Failed to update exam status');
+                        throw new Error(errorData.error || 'Failed to update status');
                     }
                 } catch (error) {
-                    alert('❌ Error updating exam status: ' + error.message);
+                    alert('Error: ' + error.message);
                 }
             }
         }
-        
+
         async function finalizeExam(examId) {
-            if (confirm('Are you sure you want to finalize this exam? Once finalized, the exam will be accessible to candidates and cannot be edited.')) {
+            if (confirm('Finalize this exam? Once finalized, it will be accessible to candidates.')) {
                 try {
                     const response = await fetch(`/admin/finalize-exam/${examId}`, {
-                        method: 'POST',
-                        credentials: 'include'
+                        method: 'POST', credentials: 'include'
                     });
-                    
                     if (response.ok) {
                         const result = await response.json();
-                        alert(`✅ Exam finalized successfully!\n\nExam Link: ${window.location.origin}/exam/${result.exam_link}\n\nShare this link with candidates.`);
+                        alert(`Exam finalized!\n\nLink: ${window.location.origin}/exam/${result.exam_link}`);
                         location.reload();
                     } else {
                         throw new Error('Failed to finalize exam');
                     }
                 } catch (error) {
-                    alert('❌ Error finalizing exam: ' + error.message);
+                    alert('Error: ' + error.message);
                 }
             }
         }
-        
+
         async function showExamLink(examLink) {
             const fullLink = `${window.location.origin}/exam/${examLink}`;
-            
-            // Try to copy to clipboard
-            const copySuccess = await copyToClipboardSecure(fullLink);
-            
-            if (copySuccess) {
-                alert(`📋 Exam link copied to clipboard!\n\n${fullLink}\n\nShare this link with candidates.`);
+            const copied = await copyToClipboardSecure(fullLink);
+            if (copied) {
+                alert(`Link copied to clipboard!\n\n${fullLink}`);
             } else {
-                // Show manual copy dialog if clipboard fails
-                alert(`📋 Exam Link:\n\n${fullLink}\n\nManually copy this link and share it with candidates.`);
+                alert(`Exam Link:\n\n${fullLink}\n\nManually copy this link.`);
             }
         }
-        
+
         async function deleteExam(examId) {
-            if (confirm('⚠️ Are you sure you want to DELETE this exam?\n\nThis will permanently remove:\n- The exam and all questions\n- All candidate results\n- All related data\n\nThis action CANNOT be undone!')) {
+            if (confirm('Are you sure you want to DELETE this exam?\n\nThis will permanently remove the exam, all questions, and all results.\n\nThis action CANNOT be undone.')) {
                 try {
                     const response = await fetch(`/api/delete-exam/${examId}`, {
-                        method: 'DELETE',
-                        credentials: 'include'
+                        method: 'DELETE', credentials: 'include'
                     });
-                    
                     if (response.ok) {
-                        // Remove from pinned list if it was pinned
                         pinnedExams = pinnedExams.filter(id => id !== examId);
                         localStorage.setItem('pinnedExams', JSON.stringify(pinnedExams));
-                        
-                        alert('✅ Exam deleted successfully');
+                        alert('Exam deleted successfully.');
                         location.reload();
                     } else {
                         throw new Error('Failed to delete exam');
                     }
                 } catch (error) {
-                    alert('❌ Error deleting exam: ' + error.message);
+                    alert('Error: ' + error.message);
                 }
             }
         }
 
-        // Print Options Functions
         let currentPrintExamId = null;
 
         function openPrintOptions(examId) {
@@ -853,164 +919,38 @@
 
         function printQuestions(includeAnswers) {
             if (!currentPrintExamId) return;
-            const url = `/admin/download-exam-questions/${currentPrintExamId}${includeAnswers ? '?answers=true' : ''}`;
-            window.open(url, '_blank');
+            window.open(`/admin/download-exam-questions/${currentPrintExamId}${includeAnswers ? '?answers=true' : ''}`, '_blank');
             closePrintOptions();
         }
 
-        // Close print modal when clicking outside
         window.addEventListener('click', function(event) {
-            const modal = document.getElementById('printOptionsModal');
-            if (event.target === modal) {
+            if (event.target === document.getElementById('printOptionsModal')) {
                 closePrintOptions();
             }
         });
-
-        console.log('✅ Admin dashboard loaded with enhanced view/edit functionality');
     </script>
 
     <!-- Print Options Modal -->
-    <style>
-        .print-options-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            backdrop-filter: blur(4px);
-        }
-
-        .print-options-content {
-            background-color: white;
-            margin: 15% auto;
-            padding: 0;
-            width: 90%;
-            max-width: 450px;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: modalSlideIn 0.3s ease;
-        }
-
-        @keyframes modalSlideIn {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-
-        .print-options-header {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-            color: white;
-            padding: 18px 22px;
-            border-radius: 16px 16px 0 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .print-options-header h3 {
-            margin: 0;
-            font-size: 1.2rem;
-        }
-
-        .print-options-close {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            font-size: 1.4rem;
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.3s ease;
-        }
-
-        .print-options-close:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .print-options-body {
-            padding: 22px;
-        }
-
-        .print-buttons-group {
-            display: flex;
-            gap: 12px;
-            margin-top: 15px;
-        }
-
-        .btn-print-action {
-            flex: 1;
-            padding: 14px 18px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .btn-print-questions {
-            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
-            color: white;
-        }
-
-        .btn-print-questions:hover {
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .btn-print-with-answers {
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-            color: white;
-        }
-
-        .btn-print-with-answers:hover {
-            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .print-info-note {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 8px;
-            padding: 10px 14px;
-            margin-top: 15px;
-            font-size: 0.85rem;
-            color: #856404;
-        }
-    </style>
-
     <div id="printOptionsModal" class="print-options-modal">
         <div class="print-options-content">
             <div class="print-options-header">
-                <h3>🖨️ Print / Download Questions</h3>
+                <h3>Print / Download Questions</h3>
                 <button class="print-options-close" onclick="closePrintOptions()">&times;</button>
             </div>
             <div class="print-options-body">
-                <p style="margin-bottom: 15px; color: #666; font-size: 0.9rem;">
+                <p style="margin-bottom: 12px; color: var(--color-text-secondary); font-size: 0.875rem;">
                     Generate a print-friendly version of the exam. Use your browser's print dialog to save as PDF.
                 </p>
-
                 <div class="print-buttons-group">
                     <button class="btn-print-action btn-print-questions" onclick="printQuestions(false)">
-                        📄 Questions Only
+                        Questions Only
                     </button>
                     <button class="btn-print-action btn-print-with-answers" onclick="printQuestions(true)">
-                        📝 With Answers
+                        With Answers
                     </button>
                 </div>
-
                 <div class="print-info-note">
-                    💡 <strong>Tip:</strong> Select "Save as PDF" in the print dialog to download.
+                    <strong>Tip:</strong> Select "Save as PDF" in the print dialog to download.
                 </div>
             </div>
         </div>

@@ -4,21 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View & Edit Exam - {{ exam.title }}</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: #f8fafc;
             min-height: 100vh;
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
             padding: 20px 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -54,7 +55,7 @@
         
         .nav-link:hover {
             background: white;
-            color: #667eea;
+            color: #4f46e5;
         }
         
         .nav-link.primary {
@@ -138,7 +139,7 @@
         .detail-value {
             font-size: 1.3rem;
             font-weight: bold;
-            color: #667eea;
+            color: #4f46e5;
             margin-bottom: 5px;
         }
         
@@ -179,7 +180,7 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
         }
         
@@ -411,7 +412,7 @@
         .form-group textarea:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4f46e5;
         }
         
         .feedback-settings,
@@ -491,9 +492,9 @@
         }
         
         .section-tab.active {
-            background: #667eea;
+            background: #4f46e5;
             color: white;
-            border-color: #667eea;
+            border-color: #4f46e5;
         }
         
         .section-tab:hover {
@@ -538,7 +539,7 @@
         }
         
         .question-number {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
             width: 35px;
             height: 35px;
@@ -586,7 +587,7 @@
 
         .section-badge {
             background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
+            color: #4f46e5;
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 0.8rem;
@@ -704,7 +705,7 @@
         
         .option-label {
             font-weight: 600;
-            color: #667eea;
+            color: #4f46e5;
             min-width: 25px;
         }
         
@@ -1379,7 +1380,7 @@
                     </div>
                     
                     <div class="question-content">
-                        <div class="question-text">{{ question.question }}</div>
+                        <div class="question-text">{{ question.question|format_text }}</div>
                         
                         <!-- Display Images if they exist -->
                         {% if question.image_url or (question.images and question.images|length > 0) %}
@@ -1424,7 +1425,7 @@
                             {% endif %}
                             <div class="option-item {% if is_correct %}correct{% else %}incorrect{% endif %}">
                                 <span class="option-label">{{ ['A', 'B', 'C', 'D', 'E', 'F'][loop.index0] }})</span>
-                                <span>{{ option }}</span>
+                                <span>{{ option|format_text }}</span>
                                 {% if is_correct %}
                                 <span style="margin-left: auto; color: #10b981; font-weight: bold;">✓ Correct</span>
                                 {% endif %}
@@ -1481,7 +1482,7 @@
                     </div>
                     
                     <div class="question-content">
-                        <div class="question-text">{{ question.question }}</div>
+                        <div class="question-text">{{ question.question|format_text }}</div>
                         
                         <!-- Display Images if they exist -->
                         {% if question.image_url or (question.images and question.images|length > 0) %}
@@ -1526,7 +1527,7 @@
                             {% endif %}
                             <div class="option-item {% if is_correct %}correct{% else %}incorrect{% endif %}">
                                 <span class="option-label">{{ ['A', 'B', 'C', 'D', 'E', 'F'][loop.index0] }})</span>
-                                <span>{{ option }}</span>
+                                <span>{{ option|format_text }}</span>
                                 {% if is_correct %}
                                 <span style="margin-left: auto; color: #10b981; font-weight: bold;">✓ Correct</span>
                                 {% endif %}
@@ -3082,7 +3083,7 @@
                                         onclick="retryEvaluation('${item.result_id}')" title="Retry automatic evaluation">
                                     🔄 Retry
                                 </button>
-                                <a href="/admin/manual-evaluate/${item.result_id}" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 6px 12px; font-size: 0.8rem; text-decoration: none; border-radius: 5px;"
+                                <a href="/admin/manual-evaluate/${item.result_id}" class="btn" style="background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%); color: white; padding: 6px 12px; font-size: 0.8rem; text-decoration: none; border-radius: 5px;"
                                    title="Manually grade this submission">
                                     ✏️ Manual
                                 </a>

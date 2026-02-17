@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Evaluation - {{ result.candidate_name }}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
-
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
     <style>
         * {
             margin: 0;
@@ -14,13 +14,12 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: #f8fafc;
             min-height: 100vh;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
             padding: 20px;
             text-align: center;
@@ -145,7 +144,7 @@
             background: white;
             padding: 12px;
             border-radius: 6px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #4f46e5;
             white-space: pre-wrap;
         }
 
@@ -207,7 +206,7 @@
 
         .marks-input input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4f46e5;
         }
 
         .max-marks {
@@ -233,7 +232,7 @@
 
         .feedback-input textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4f46e5;
         }
 
         .actions {
@@ -255,7 +254,7 @@
         }
 
         .total-display strong {
-            color: #667eea;
+            color: #4f46e5;
         }
 
         .btn {
@@ -271,7 +270,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
         }
 
@@ -382,7 +381,7 @@
                     </span>
                 </div>
                 <div class="question-body">
-                    <div class="question-text">{{ answer.question_text }}</div>
+                    <div class="question-text">{{ answer.question_text|format_text }}</div>
 
                     <div class="answer-section">
                         <h4>Candidate's Answer:</h4>
@@ -393,7 +392,7 @@
                                     {% if loop.index0 == answer.correct_answer %}correct{% endif %}
                                     {% if answer.candidate_answer == loop.index0|string %}selected{% if loop.index0 != answer.correct_answer %} wrong{% endif %}{% endif %}
                                 ">
-                                    {{ loop.index }}. {{ option }}
+                                    {{ loop.index }}. {{ option|format_text }}
                                     {% if loop.index0 == answer.correct_answer %} (Correct){% endif %}
                                     {% if answer.candidate_answer == loop.index0|string %} (Selected){% endif %}
                                 </li>

@@ -3,24 +3,27 @@ FastAPI application for AI-based Exam System
 Contains all API routes and web endpoints
 """
 
-from fastapi import FastAPI, Request, Form, HTTPException, Depends, status
+from fastapi import FastAPI, Request, Form, HTTPException, Depends, status, File, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from fastapi.security import HTTPBasic
+from fastapi.staticfiles import StaticFiles
 from typing import Dict, Optional
+from datetime import datetime, timedelta
+from pathlib import Path
 import json
 import uuid
 import os
+import re
 import sqlite3
 import threading
-from datetime import datetime, timedelta
-from fastapi import File, UploadFile
-from fastapi.staticfiles import StaticFiles
-import shutil
-from pathlib import Path
+import traceback
+import html as html_module
+import hmac
+import hashlib
+import secrets
 
 from utils import (
-    ExamSystem, ExamSession, AdminSession,
+    ExamEvaluator, ExamSession, AdminSession,
     create_admin_session, verify_admin_session,
     convert_utc_to_bangladesh, order_questions_by_type,
     group_questions_by_section_for_navigation, validate_form_data,
@@ -29,23 +32,142 @@ from utils import (
 from db import db
 from evaluation_queue import init_evaluation_queue, get_evaluation_queue
 
-# Get environment variables
+# --- Configuration ---
+
 API_KEY = os.getenv("API_KEY")
-API_KEY_BACKUP = os.getenv("API_KEY_BACKUP")  # Backup API key for failover
+API_KEY_BACKUP = os.getenv("API_KEY_BACKUP")
 ADMIN_SECRET_KEY = os.getenv("ADMIN_SECRET_KEY")
-ADMIN_SESSION_TIMEOUT = 30  # Session timeout in minutes
+
+ADMIN_SESSION_TIMEOUT = 30          # minutes
+EXAM_SESSION_COOKIE_MAX_AGE = 7200  # 2 hours in seconds
+CSRF_COOKIE_MAX_AGE = 3600          # 1 hour in seconds
+RESULT_ACCESS_COOKIE_MAX_AGE = 86400  # 24 hours in seconds
+ADMIN_COOKIE_MAX_AGE = ADMIN_SESSION_TIMEOUT * 60
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024   # 5MB
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+SUBMISSION_GRACE_PERIOD = 60        # seconds of grace for late submissions
 
 UPLOAD_DIR = Path("uploads/images")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Admin-Controlled Exam System")
 templates = Jinja2Templates(directory="templates", auto_reload=True)
-security = HTTPBasic()
+
+
+# --- Custom Jinja2 Filters ---
+
+def format_text(value):
+    """Convert **bold** markdown to <strong> tags, safely escaped."""
+    from markupsafe import Markup, escape
+    text = str(escape(value))
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    return Markup(text)
+
+templates.env.filters["format_text"] = format_text
+
+
+# --- CSRF Protection (Double-Submit Cookie Pattern) ---
+
+def generate_csrf_token() -> str:
+    """Generate a new CSRF token"""
+    return secrets.token_urlsafe(32)
+
+
+def get_csrf_token(request: Request) -> str:
+    """Get existing CSRF token from cookie or generate a new one"""
+    token = request.cookies.get("csrf_token")
+    if not token:
+        token = generate_csrf_token()
+    return token
+
+
+async def verify_csrf_token(request: Request):
+    """Verify CSRF token from form data matches cookie value"""
+    cookie_token = request.cookies.get("csrf_token")
+    if not cookie_token:
+        raise HTTPException(status_code=403, detail="CSRF token missing")
+
+    # Check form data
+    form = await request.form()
+    form_token = form.get("csrf_token", "")
+
+    if not form_token or not hmac.compare_digest(cookie_token, form_token):
+        raise HTTPException(status_code=403, detail="CSRF token invalid")
+
+
+def set_csrf_cookie(response: Response, token: str):
+    """Set CSRF token cookie on a response"""
+    response.set_cookie(
+        key="csrf_token",
+        value=token,
+        max_age=CSRF_COOKIE_MAX_AGE,
+        httponly=False,  # Needs to be readable by forms
+        samesite="lax"
+    )
+
+
+def render_with_csrf(request: Request, template_name: str, context: dict,
+                     status_code: int = 200) -> Response:
+    """Render a template with CSRF token automatically included"""
+    csrf_token = get_csrf_token(request)
+    context["request"] = request
+    context["csrf_token"] = csrf_token
+    response = templates.TemplateResponse(template_name, context, status_code=status_code)
+    set_csrf_cookie(response, csrf_token)
+    return response
+
+
+def set_result_access_cookie(response: Response, result_id: str):
+    """Set a signed result access cookie"""
+    response.set_cookie(
+        key=f"result_access_{result_id}",
+        value=sign_result_access(result_id),
+        max_age=RESULT_ACCESS_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="lax"
+    )
+
+
+def set_exam_session_cookie(response: Response, session_id: str):
+    """Set the exam session cookie (httponly to prevent JS theft)"""
+    response.set_cookie(
+        key="exam_session",
+        value=session_id,
+        max_age=EXAM_SESSION_COOKIE_MAX_AGE,
+        httponly=True,
+        samesite="strict"
+    )
+
+
+# --- Result Access Control (HMAC-signed cookies) ---
+
+def sign_result_access(result_id: str) -> str:
+    """Generate an HMAC signature for result access"""
+    return hmac.new(
+        ADMIN_SECRET_KEY.encode() if ADMIN_SECRET_KEY else b'fallback',
+        result_id.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+
+def verify_result_access(request: Request, result_id: str) -> bool:
+    """Check if the request has a valid signed cookie for this result"""
+    # Admin always has access
+    admin_session_id = request.cookies.get("admin_session")
+    if admin_session_id and verify_admin_session(admin_session_id, admin_sessions, ADMIN_SESSION_TIMEOUT, lock=_admin_sessions_lock):
+        return True
+
+    cookie_value = request.cookies.get(f"result_access_{result_id}")
+    if not cookie_value:
+        return False
+    expected = sign_result_access(result_id)
+    return hmac.compare_digest(cookie_value, expected)
 
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Initialize exam system with primary and backup API keys
-exam_system = ExamSystem(API_KEY, API_KEY_BACKUP)
+exam_system = ExamEvaluator(API_KEY, API_KEY_BACKUP)
 
 # Initialize evaluation queue for background processing
 # Rate limit: 10 requests per minute to prevent API quota exhaustion
@@ -220,7 +342,6 @@ def safe_error_message(e: Exception, context: str = "operation") -> str:
 
     Logs the full error for debugging but returns a generic message to users.
     """
-    import traceback
     # Log the full error for debugging
     print(f"❌ Error during {context}: {str(e)}")
     traceback.print_exc()
@@ -266,10 +387,9 @@ async def exam_page(request: Request, exam_link: str):
             "error": "This exam is either invalid, has been deactivated, or is no longer available. Please contact the administrator for assistance."
         })
 
-    return templates.TemplateResponse("exam_start.html", {
-        "request": request,
+    return render_with_csrf(request, "exam_start.html", {
         "exam": exam,
-        "exam_link": exam_link
+        "exam_link": exam_link,
     })
 
 
@@ -283,16 +403,18 @@ async def exam_results_lookup_page(request: Request, exam_link: str):
             "error": "Invalid exam link. Please check the link and try again."
         })
 
-    return templates.TemplateResponse("result_lookup.html", {
-        "request": request,
+    return render_with_csrf(request, "result_lookup.html", {
         "exam": exam,
-        "exam_link": exam_link
+        "exam_link": exam_link,
     })
 
 
 @app.post("/exam/{exam_link}/results", response_class=HTMLResponse)
 async def lookup_exam_results(request: Request, exam_link: str):
     """Look up results using candidate ID"""
+    # Verify CSRF token
+    await verify_csrf_token(request)
+
     exam = db.get_exam_by_link(exam_link)
     if not exam:
         return templates.TemplateResponse("candidate_home.html", {
@@ -304,50 +426,53 @@ async def lookup_exam_results(request: Request, exam_link: str):
     candidate_id = form_data.get("candidate_id", "").strip()
 
     if not candidate_id:
-        return templates.TemplateResponse("result_lookup.html", {
-            "request": request,
+        return render_with_csrf(request, "result_lookup.html", {
             "exam": exam,
             "exam_link": exam_link,
-            "error": "Please enter your Candidate ID."
+            "error": "Please enter your Candidate ID.",
         })
 
     # Look up the result
     result = db.lookup_candidate_result(exam_link, candidate_id)
 
     if not result:
-        return templates.TemplateResponse("result_lookup.html", {
-            "request": request,
+        return render_with_csrf(request, "result_lookup.html", {
             "exam": exam,
             "exam_link": exam_link,
-            "error": "No results found for this Candidate ID. Please check your ID and try again."
+            "error": "No results found for this Candidate ID. Please check your ID and try again.",
         })
 
-    # Redirect to the results page
-    return RedirectResponse(url=f"/results/{result['result_id']}", status_code=303)
+    # Set result access cookie and redirect to the results page
+    result_id = result['result_id']
+    response = RedirectResponse(url=f"/results/{result_id}", status_code=303)
+    set_result_access_cookie(response, result_id)
+    return response
 
 
 @app.post("/exam/{exam_link}/start", response_class=HTMLResponse)
 async def start_exam(request: Request, exam_link: str):
     """Start exam for candidate with proper question ordering and live session tracking"""
+    # Verify CSRF token
+    await verify_csrf_token(request)
+
     exam = db.get_exam_by_link(exam_link)
     if not exam:
         return templates.TemplateResponse("candidate_home.html", {
             "request": request,
             "error": "Invalid exam link. Please check the link and try again."
         })
-    
+
     # Get form data
     form_data = await request.form()
     candidate_name = form_data.get("candidate_name", "").strip()
     candidate_id = form_data.get("candidate_id", "").strip()
-    
+
     # Validate form data
     if not candidate_name or not candidate_id:
-        return templates.TemplateResponse("exam_start.html", {
-            "request": request,
+        return render_with_csrf(request, "exam_start.html", {
             "exam": exam,
             "exam_link": exam_link,
-            "error": "Please fill in both your name and candidate ID."
+            "error": "Please fill in both your name and candidate ID.",
         })
 
     # Check if candidate has already submitted this exam
@@ -382,14 +507,12 @@ async def start_exam(request: Request, exam_link: str):
             questions = order_questions_by_type(questions)
             sections = group_questions_by_section_for_navigation(questions)
 
-            # Get previously saved answers
-            saved_answers = db_session.get('answers_data', {})
+            # Get previously saved answers (Fix: key is 'answers' not 'answers_data')
+            saved_answers = db_session.get('answers', {})
             if isinstance(saved_answers, str):
-                import json as json_module
-                saved_answers = json_module.loads(saved_answers) if saved_answers else {}
+                saved_answers = json.loads(saved_answers) if saved_answers else {}
 
-            return templates.TemplateResponse("exam_page.html", {
-                "request": request,
+            response = render_with_csrf(request, "exam_page.html", {
                 "exam": exam,
                 "questions": questions,
                 "sections": sections,
@@ -397,8 +520,10 @@ async def start_exam(request: Request, exam_link: str):
                 "candidate_name": db_session['candidate_name'],
                 "time_limit": db_session['time_limit'],
                 "saved_answers": saved_answers,
-                "resumed": True
+                "resumed": True,
             })
+            set_exam_session_cookie(response, session_id)
+            return response
 
     # Create new exam session using thread-safe setter
     session_id = str(uuid.uuid4())
@@ -422,29 +547,30 @@ async def start_exam(request: Request, exam_link: str):
 
     # Create live session in database (for admin monitoring)
     db.create_live_session(session_id, exam['id'], candidate_name, candidate_id)
-    
+
     # Get questions for the exam
     questions = db.get_exam_questions(exam['id'])
-    
+
     # Order questions by type: MCQ → Short → Essay
     ordered_questions = order_questions_by_type(questions)
-    
+
     # Get sections structure for navigation
     sections_by_type = group_questions_by_section_for_navigation(ordered_questions)
-    
+
     print(f"📝 Exam started with {len(ordered_questions)} questions ordered by type")
     print(f"📊 Sections for navigation: {list(sections_by_type.keys())}")
     print(f"🔴 Live session created for {candidate_name} ({candidate_id})")
-    
-    return templates.TemplateResponse("exam_page.html", {
-        "request": request,
+
+    response = render_with_csrf(request, "exam_page.html", {
         "session_id": session_id,
         "candidate_name": candidate_name,
         "candidate_id": candidate_id,
         "exam": exam,
         "questions": ordered_questions,
-        "sections": sections_by_type
+        "sections": sections_by_type,
     })
+    set_exam_session_cookie(response, session_id)
+    return response
 
 
 @app.post("/exam/submit", response_class=HTMLResponse)
@@ -458,8 +584,12 @@ async def submit_exam(request: Request):
     3. Redirects candidate to status page (they can leave)
     4. Evaluation happens in background with rate limiting and retries
     """
+    # Verify CSRF token
+    await verify_csrf_token(request)
+
     form_data = await request.form()
-    session_id = form_data.get("session_id")
+    # Read session_id from httponly cookie (not form data) to prevent hijacking
+    session_id = request.cookies.get("exam_session")
     client_time_taken = form_data.get("time_taken", "00:00")  # Client-reported time (not trusted)
 
     print(f"📄 Processing exam submission for session: {session_id}")
@@ -518,11 +648,9 @@ async def submit_exam(request: Request):
     questions = db.get_exam_questions(session.exam_id)
 
     # SERVER-SIDE TIME ENFORCEMENT
-    # Check if the exam time has expired (with 1 minute grace period for network latency)
     time_elapsed = datetime.now() - session.started_at
     time_limit_seconds = session.time_limit * 60
-    grace_period_seconds = 60  # 1 minute grace period
-    max_allowed_seconds = time_limit_seconds + grace_period_seconds
+    max_allowed_seconds = time_limit_seconds + SUBMISSION_GRACE_PERIOD
 
     if time_elapsed.total_seconds() > max_allowed_seconds:
         print(f"⏰ Exam time exceeded for {session.candidate_name}: elapsed {time_elapsed.total_seconds():.0f}s, limit {time_limit_seconds}s")
@@ -613,19 +741,16 @@ async def submit_exam(request: Request):
         # Mark database session as submitted and clean up
         db.mark_exam_session_submitted(session_id)
 
-        # Step 3: Redirect to status page
-        # Candidate can now close the browser - their answers are safe!
-        return templates.TemplateResponse("evaluation_status.html", {
-            "request": request,
-            "result_id": result_id,
-            "candidate_name": session.candidate_name,
-            "candidate_id": session.candidate_id,
-            "exam_title": exam['title'],
-            "time_taken": time_taken,
-            "show_feedback": show_feedback,
-            "status": "pending",
-            "message": "Your exam has been submitted successfully! Your answers are being evaluated."
-        })
+        # Step 3: PRG pattern - Redirect to results page (handles pending/completed/failed)
+        # This prevents duplicate submissions on browser reload
+        response = RedirectResponse(
+            url=f"/results/{result_id}",
+            status_code=status.HTTP_303_SEE_OTHER
+        )
+        set_result_access_cookie(response, result_id)
+        # Clear the exam session cookie
+        response.delete_cookie("exam_session")
+        return response
 
     except Exception as e:
         print(f"❌ Error during exam submission: {str(e)}")
@@ -655,12 +780,18 @@ async def submit_exam(request: Request):
 @app.get("/admin/login", response_class=HTMLResponse)
 async def admin_login_page(request: Request):
     """Admin login page"""
-    return templates.TemplateResponse("admin_login.html", {"request": request})
+    return render_with_csrf(request, "admin_login.html", {})
 
 
 @app.post("/admin/login")
-async def admin_login(request: Request, secret_key: str = Form(...)):
+async def admin_login(request: Request):
     """Process admin login"""
+    # Verify CSRF token
+    await verify_csrf_token(request)
+
+    form_data = await request.form()
+    secret_key = form_data.get("secret_key", "")
+
     if secret_key == ADMIN_SECRET_KEY:
         session_id = create_admin_session(ADMIN_SESSION_TIMEOUT)
         # Use thread-safe setter for admin session
@@ -674,22 +805,20 @@ async def admin_login(request: Request, secret_key: str = Form(...)):
         response.set_cookie(
             key="admin_session",
             value=session_id,
-            max_age=ADMIN_SESSION_TIMEOUT * 60,
+            max_age=ADMIN_COOKIE_MAX_AGE,
             httponly=True,
-            secure=False,
             samesite="lax"
         )
         return response
     else:
-        return templates.TemplateResponse("admin_login.html", {
-            "request": request,
-            "error": "Invalid secret key. Please try again."
+        return render_with_csrf(request, "admin_login.html", {
+            "error": "Invalid secret key. Please try again.",
         })
 
 
-@app.get("/admin/logout")
+@app.post("/admin/logout")
 async def admin_logout(request: Request):
-    """Logout admin user"""
+    """Logout admin user (POST to prevent CSRF)"""
     session_id = get_admin_session_from_request(request)
     if session_id:
         # Use thread-safe deletion for admin session
@@ -718,7 +847,6 @@ async def admin_dashboard(request: Request, session_id: str = Depends(verify_adm
     except Exception as e:
         # Log the full error for debugging but don't expose to user
         print(f"❌ Error in admin dashboard: {str(e)}")
-        import traceback
         traceback.print_exc()
         return HTMLResponse("""
         <html><body>
@@ -733,14 +861,15 @@ async def admin_dashboard(request: Request, session_id: str = Depends(verify_adm
 @app.get("/admin/create-exam", response_class=HTMLResponse)
 async def create_exam_page(request: Request, session_id: str = Depends(verify_admin_access)):
     """Create new exam page"""
-    return templates.TemplateResponse("create_exam.html", {
-        "request": request
-    })
+    return render_with_csrf(request, "create_exam.html", {})
 
 
 @app.post("/admin/create-exam", response_class=HTMLResponse)
 async def create_exam(request: Request, session_id: str = Depends(verify_admin_access)):
     """Create exam and generate questions with sections support"""
+    # Verify CSRF token
+    await verify_csrf_token(request)
+
     form_data = await request.form()
     
     try:
@@ -900,7 +1029,7 @@ async def create_exam(request: Request, session_id: str = Depends(verify_admin_a
                     sections_structure[section_type]['generation_status'] = 'manual'
 
                 # Create MCQ placeholders
-                for i in range(section_config.get('mcq_count', 0)):
+                for _ in range(section_config.get('mcq_count', 0)):
                     placeholder_question = {
                         'type': 'mcq',
                         'question': f'[MCQ Question {question_count + 1}] - Edit this question or click "Regenerate Section" to generate with AI',
@@ -913,7 +1042,7 @@ async def create_exam(request: Request, session_id: str = Depends(verify_admin_a
                         question_count += 1
 
                 # Create Short Answer placeholders
-                for i in range(section_config.get('short_count', 0)):
+                for _ in range(section_config.get('short_count', 0)):
                     placeholder_question = {
                         'type': 'short',
                         'question': f'[Short Answer Question {question_count + 1}] - Edit this question or click "Regenerate Section" to generate with AI',
@@ -925,7 +1054,7 @@ async def create_exam(request: Request, session_id: str = Depends(verify_admin_a
                         question_count += 1
 
                 # Create Essay placeholders
-                for i in range(section_config.get('essay_count', 0)):
+                for _ in range(section_config.get('essay_count', 0)):
                     placeholder_question = {
                         'type': 'essay',
                         'question': f'[Essay Question {question_count + 1}] - Edit this question or click "Regenerate Section" to generate with AI',
@@ -1044,10 +1173,11 @@ async def view_exam_page(request: Request, exam_id: str, session_id: str = Depen
         
     except Exception as e:
         print(f"❌ Error in view_exam_page: {str(e)}")
-        return HTMLResponse(f"""
+        traceback.print_exc()
+        return HTMLResponse("""
         <html><body>
             <h1>View Exam Error</h1>
-            <p>Error: {str(e)}</p>
+            <p>An unexpected error occurred. Please try again later.</p>
             <p><a href="/admin">Back to Dashboard</a></p>
         </body></html>
         """, status_code=500)
@@ -1345,19 +1475,20 @@ async def download_result_pdf(request: Request, session_id: str = Depends(verify
         if not result_details:
             raise HTTPException(status_code=404, detail="Result not found")
         
-        # Generate HTML content for download
+        # Generate HTML content for download (escape all user-supplied data)
+        esc = html_module.escape
         if not result_details.get('has_feedback', True):
             # Simple submission confirmation
             html_content = f"""
             <!DOCTYPE html>
             <html>
-            <head><title>Exam Submission - {result_details['candidate_name']}</title></head>
+            <head><title>Exam Submission - {esc(result_details['candidate_name'])}</title></head>
             <body>
                 <h1>📋 Exam Submission Confirmation</h1>
-                <h2>{result_details['exam_title']}</h2>
-                <p><strong>Name:</strong> {result_details['candidate_name']}</p>
-                <p><strong>ID:</strong> {result_details['candidate_id']}</p>
-                <p><strong>Time Taken:</strong> {result_details['time_taken']}</p>
+                <h2>{esc(result_details['exam_title'])}</h2>
+                <p><strong>Name:</strong> {esc(result_details['candidate_name'])}</p>
+                <p><strong>ID:</strong> {esc(result_details['candidate_id'])}</p>
+                <p><strong>Time Taken:</strong> {esc(str(result_details['time_taken']))}</p>
                 <p><strong>Status:</strong> Successfully Submitted</p>
             </body>
             </html>
@@ -1370,18 +1501,18 @@ async def download_result_pdf(request: Request, session_id: str = Depends(verify
                 if section_type not in sections:
                     sections[section_type] = []
                 sections[section_type].append(question)
-            
+
             html_content = f"""
             <!DOCTYPE html>
             <html>
-            <head><title>Exam Results - {result_details['candidate_name']}</title></head>
+            <head><title>Exam Results - {esc(result_details['candidate_name'])}</title></head>
             <body>
                 <h1>📊 Exam Results Report</h1>
-                <h2>{result_details['exam_title']}</h2>
-                <p><strong>Name:</strong> {result_details['candidate_name']}</p>
+                <h2>{esc(result_details['exam_title'])}</h2>
+                <p><strong>Name:</strong> {esc(result_details['candidate_name'])}</p>
                 <p><strong>Score:</strong> {result_details['obtained_marks']}/{result_details['total_marks']} ({result_details['percentage']:.1f}%)</p>
-                <p><strong>Performance:</strong> {result_details['performance_level']}</p>
-                
+                <p><strong>Performance:</strong> {esc(result_details['performance_level'])}</p>
+
                 <!-- Questions and answers would be formatted here -->
                 <h3>Detailed Results</h3>
                 <p>Total Questions: {len(result_details['questions'])}</p>
@@ -1394,7 +1525,7 @@ async def download_result_pdf(request: Request, session_id: str = Depends(verify
         return Response(
             content=html_content,
             media_type="text/html",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
         
     except Exception as e:
@@ -1423,7 +1554,8 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
         # Check if we should include answers (query param)
         include_answers = request.query_params.get("answers", "false").lower() == "true"
 
-        # Generate section HTML
+        # Generate section HTML (escape all user-supplied data)
+        esc = html_module.escape
         sections_html = ""
         question_number = 1
 
@@ -1437,7 +1569,7 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
             sections_html += f"""
             <div class="section">
                 <div class="section-header">
-                    <h2>{display_name}</h2>
+                    <h2>{esc(display_name)}</h2>
                     <span class="section-info">{len(section_questions)} Questions | {section_marks} Marks</span>
                 </div>
             """
@@ -1450,18 +1582,18 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
                 <div class="question">
                     <div class="question-header">
                         <span class="question-number">Q{question_number}.</span>
-                        <span class="question-type">[{q_type}]</span>
+                        <span class="question-type">[{esc(q_type)}]</span>
                         <span class="question-marks">[{marks} Mark{'s' if marks != 1 else ''}]</span>
                     </div>
-                    <div class="question-text">{question.get('question', '')}</div>
+                    <div class="question-text">{esc(question.get('question', ''))}</div>
                 """
 
                 # Add images if present
                 if question.get('image_url'):
                     sections_html += f"""
                     <div class="question-image">
-                        <img src="{question['image_url']}" alt="Question figure">
-                        {f'<p class="image-caption">{question["image_caption"]}</p>' if question.get('image_caption') else ''}
+                        <img src="{esc(question['image_url'])}" alt="Question figure">
+                        {f'<p class="image-caption">{esc(question["image_caption"])}</p>' if question.get('image_caption') else ''}
                     </div>
                     """
 
@@ -1470,8 +1602,8 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
                 for img in question_images:
                     sections_html += f"""
                     <div class="question-image">
-                        <img src="{img['url']}" alt="Question figure">
-                        {f'<p class="image-caption">{img["caption"]}</p>' if img.get('caption') else ''}
+                        <img src="{esc(img['url'])}" alt="Question figure">
+                        {f'<p class="image-caption">{esc(img["caption"])}</p>' if img.get('caption') else ''}
                     </div>
                     """
 
@@ -1479,13 +1611,13 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
                 if question.get('type') == 'mcq' and question.get('options'):
                     sections_html += '<div class="options">'
                     for idx, option in enumerate(question['options']):
-                        option_letter = ['A', 'B', 'C', 'D'][idx]
+                        option_letter = ['A', 'B', 'C', 'D', 'E', 'F'][idx] if idx < 6 else str(idx + 1)
                         is_correct = idx == question.get('correct_answer')
                         correct_class = ' correct-answer' if include_answers and is_correct else ''
                         sections_html += f"""
                         <div class="option{correct_class}">
                             <span class="option-letter">{option_letter})</span>
-                            <span class="option-text">{option}</span>
+                            <span class="option-text">{esc(str(option))}</span>
                             {' <span class="correct-mark">✓</span>' if include_answers and is_correct else ''}
                         </div>
                         """
@@ -1497,7 +1629,7 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
                         sections_html += f"""
                         <div class="expected-answer">
                             <strong>Expected Answer:</strong>
-                            <p>{question['expected_answer']}</p>
+                            <p>{esc(question['expected_answer'])}</p>
                         </div>
                         """
                     else:
@@ -1520,7 +1652,7 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{exam['title']} - Exam Questions</title>
+    <title>{esc(exam['title'])} - Exam Questions</title>
     <style>
         * {{
             margin: 0;
@@ -1806,10 +1938,10 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
     </div>
 
     <div class="exam-header">
-        <h1>{exam['title']}</h1>
+        <h1>{esc(exam['title'])}</h1>
         <div class="exam-meta">
-            <span class="exam-meta-item"><strong>Department:</strong> {exam['department']}</span>
-            <span class="exam-meta-item"><strong>Position:</strong> {exam['position']}</span>
+            <span class="exam-meta-item"><strong>Department:</strong> {esc(exam['department'])}</span>
+            <span class="exam-meta-item"><strong>Position:</strong> {esc(exam['position'])}</span>
             <span class="exam-meta-item"><strong>Time:</strong> {exam['time_limit']} Minutes</span>
             <span class="exam-meta-item"><strong>Total Marks:</strong> {total_marks}</span>
             <span class="exam-meta-item"><strong>Total Questions:</strong> {total_questions}</span>
@@ -1845,7 +1977,7 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
             <li>Total marks: <strong>{total_marks}</strong></li>
             <li>Answer all questions in the space provided.</li>
             <li>For MCQ questions, clearly mark your answer.</li>
-            {f"<li>{exam['instructions']}</li>" if exam.get('instructions') else ""}
+            {f"<li>{esc(exam['instructions'])}</li>" if exam.get('instructions') else ""}
         </ul>
     </div>
 
@@ -1991,21 +2123,18 @@ async def upload_question_image(
     """Upload an image for a question"""
     try:
         # Validate file type
-        allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'}
         file_ext = Path(file.filename).suffix.lower()
-        
-        if file_ext not in allowed_extensions:
+
+        if file_ext not in ALLOWED_IMAGE_EXTENSIONS:
             return {
-                "success": False, 
-                "error": f"Invalid file type. Allowed types: {', '.join(allowed_extensions)}"
+                "success": False,
+                "error": f"Invalid file type. Allowed types: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}"
             }
-        
-        # Validate file size (max 5MB)
-        file_size = 0
+
+        # Validate file size
         file_content = await file.read()
-        file_size = len(file_content)
-        
-        if file_size > 5 * 1024 * 1024:  # 5MB limit
+
+        if len(file_content) > MAX_UPLOAD_SIZE:
             return {"success": False, "error": "File size exceeds 5MB limit"}
         
         # Reset file position for saving
@@ -2169,7 +2298,15 @@ async def view_results_by_id(request: Request, result_id: str):
     """
     View results for a specific result ID.
     Candidates are redirected here after evaluation completes.
+    Requires a valid signed access cookie (set on submission or result lookup).
     """
+    # Verify result access (signed cookie or admin session)
+    if not verify_result_access(request, result_id):
+        return templates.TemplateResponse("candidate_home.html", {
+            "request": request,
+            "error": "Access denied. Please use the result lookup form with your Candidate ID to view your results."
+        })
+
     try:
         # Check evaluation status
         status_info = db.get_result_evaluation_status(result_id)

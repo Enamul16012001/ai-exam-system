@@ -4,17 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Status - {{ exam_title }}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--color-bg);
             min-height: 100vh;
             padding: 20px;
             display: flex;
@@ -25,15 +19,16 @@
         .container {
             max-width: 650px;
             width: 100%;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            background: var(--color-surface);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
             overflow: hidden;
             text-align: center;
+            border: 1px solid var(--color-border);
         }
 
         .header {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
             color: white;
             padding: 40px 30px;
         }
@@ -47,7 +42,7 @@
         }
 
         .header.completed {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
         }
 
         .header.failed {
@@ -55,8 +50,21 @@
         }
 
         .status-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .status-icon svg {
+            width: 48px;
+            height: 48px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .header h1 {
@@ -75,16 +83,17 @@
 
         .exam-title {
             font-size: 1.5rem;
-            color: #333;
+            color: var(--color-text);
             margin-bottom: 30px;
             font-weight: 600;
         }
 
         .candidate-info {
-            background: #f8f9ff;
-            border-radius: 12px;
+            background: var(--color-bg-subtle);
+            border-radius: var(--radius-lg);
             padding: 25px;
             margin-bottom: 30px;
+            border: 1px solid var(--color-border);
         }
 
         .info-grid {
@@ -100,47 +109,44 @@
             gap: 8px;
         }
 
-        .info-icon {
-            font-size: 1.5rem;
-        }
-
         .info-label {
-            font-size: 0.85rem;
-            color: #666;
+            font-size: 0.8125rem;
+            color: var(--color-text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.05em;
+            font-weight: 600;
         }
 
         .info-value {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #333;
+            color: var(--color-text);
         }
 
         .status-box {
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             padding: 30px;
             margin-bottom: 30px;
         }
 
         .status-box.pending {
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-            border: 2px solid #3b82f6;
+            background: var(--color-info-bg);
+            border: 1px solid var(--color-info-border);
         }
 
         .status-box.processing {
-            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-            border: 2px solid #f59e0b;
+            background: var(--color-warning-bg);
+            border: 1px solid var(--color-warning-border);
         }
 
         .status-box.completed {
-            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-            border: 2px solid #10b981;
+            background: var(--color-success-bg);
+            border: 1px solid var(--color-success-border);
         }
 
         .status-box.failed {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border: 2px solid #ef4444;
+            background: var(--color-danger-bg);
+            border: 1px solid var(--color-danger-border);
         }
 
         .status-box h3 {
@@ -168,16 +174,16 @@
         }
 
         .progress-bar {
-            height: 8px;
-            background: rgba(0,0,0,0.1);
-            border-radius: 4px;
+            height: 6px;
+            background: var(--color-border);
+            border-radius: var(--radius-full);
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%);
-            border-radius: 4px;
+            background: var(--color-primary);
+            border-radius: var(--radius-full);
             animation: progress-animation 2s ease-in-out infinite;
         }
 
@@ -202,19 +208,19 @@
         .queue-stat .value {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #3b82f6;
+            color: var(--color-primary);
         }
 
         .queue-stat .label {
             font-size: 0.8rem;
-            color: #666;
+            color: var(--color-text-muted);
             text-transform: uppercase;
         }
 
         .safe-message {
-            background: #ecfdf5;
-            border: 2px solid #10b981;
-            border-radius: 12px;
+            background: var(--color-success-bg);
+            border: 1px solid var(--color-success-border);
+            border-radius: var(--radius-lg);
             padding: 20px;
             margin-bottom: 30px;
         }
@@ -241,60 +247,77 @@
         }
 
         .btn {
-            display: inline-block;
-            padding: 15px 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-2);
+            padding: 14px 28px;
             border: none;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             font-size: 1rem;
             font-weight: 600;
             text-decoration: none;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all var(--transition-base);
+            font-family: var(--font-sans);
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--color-primary);
             color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
         .btn-secondary {
-            background: #6b7280;
+            background: #475569;
             color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #334155;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
         .btn-success {
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            background: var(--color-success);
             color: white;
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        .btn-success:hover {
+            background: #047857;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
         .btn:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
 
         .footer {
-            background: #f8f9ff;
+            background: var(--color-bg-subtle);
             padding: 20px 30px;
-            border-top: 2px solid #f0f0f0;
+            border-top: 1px solid var(--color-border);
         }
 
         .footer p {
-            color: #666;
+            color: var(--color-text-secondary);
             font-size: 0.9rem;
             line-height: 1.5;
         }
 
         .spinner {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
+            width: 18px;
+            height: 18px;
+            border: 2.5px solid rgba(255,255,255,0.3);
             border-radius: 50%;
             border-top-color: white;
             animation: spin 1s ease-in-out infinite;
@@ -307,13 +330,13 @@
 
         .refresh-timer {
             font-size: 0.9rem;
-            color: #666;
+            color: var(--color-text-secondary);
             margin-top: 15px;
         }
 
         #countdown {
             font-weight: bold;
-            color: #3b82f6;
+            color: var(--color-primary);
         }
 
         .hidden {
@@ -364,15 +387,15 @@
         <div class="header {{ status }}">
             <div class="status-icon" id="status-icon">
                 {% if status == 'pending' %}
-                ⏳
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 {% elif status == 'processing' %}
-                ⚙️
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 {% elif status == 'completed' %}
-                ✅
+                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 {% elif status == 'failed' %}
-                ⚠️
+                <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                 {% else %}
-                📋
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                 {% endif %}
             </div>
             <h1 id="status-title">
@@ -395,18 +418,15 @@
             <div class="candidate-info">
                 <div class="info-grid">
                     <div class="info-item">
-                        <div class="info-icon">👤</div>
                         <div class="info-label">Candidate Name</div>
                         <div class="info-value">{{ candidate_name }}</div>
                     </div>
                     <div class="info-item">
-                        <div class="info-icon">🆔</div>
                         <div class="info-label">Candidate ID</div>
                         <div class="info-value">{{ candidate_id }}</div>
                     </div>
                     {% if time_taken %}
                     <div class="info-item">
-                        <div class="info-icon">⏰</div>
                         <div class="info-label">Time Taken</div>
                         <div class="info-value">{{ time_taken }}</div>
                     </div>
@@ -416,14 +436,14 @@
 
             <!-- Safe Message - Always show first -->
             <div class="safe-message">
-                <h4>✅ Your Answers Are Saved!</h4>
+                <h4>Your Answers Are Saved!</h4>
                 <p>Your exam has been successfully submitted and your answers are safely stored. You can close this page at any time - your submission will not be lost.</p>
             </div>
 
             <!-- Status Box -->
             <div class="status-box {{ status }}" id="status-box">
                 {% if status == 'pending' %}
-                <h3>📋 In Evaluation Queue</h3>
+                <h3>In Evaluation Queue</h3>
                 <p>{{ message }}</p>
                 <div class="progress-container">
                     <div class="progress-bar">
@@ -439,7 +459,7 @@
                 </div>
                 {% endif %}
                 {% elif status == 'processing' %}
-                <h3>⚙️ Evaluating Your Answers</h3>
+                <h3>Evaluating Your Answers</h3>
                 <p>Our AI is analyzing your responses. This usually takes 1-2 minutes.</p>
                 <div class="progress-container">
                     <div class="progress-bar">
@@ -447,10 +467,10 @@
                     </div>
                 </div>
                 {% elif status == 'completed' %}
-                <h3>🎉 Evaluation Complete!</h3>
+                <h3>Evaluation Complete!</h3>
                 <p>Your exam has been fully evaluated. Click below to view your detailed results.</p>
                 {% elif status == 'failed' %}
-                <h3>📝 Manual Review Required</h3>
+                <h3>Manual Review Required</h3>
                 <p>{{ message }}</p>
                 <p>Your answers have been saved and will be reviewed by our team. You will be notified when results are available.</p>
                 {% endif %}
@@ -460,15 +480,15 @@
             <div class="actions">
                 {% if status == 'completed' and show_feedback %}
                 <a href="/results/{{ result_id }}" class="btn btn-success" id="view-results-btn">
-                    📊 View Your Results
+                    View Your Results
                 </a>
                 {% elif status == 'pending' or status == 'processing' %}
                 <button class="btn btn-primary" id="check-status-btn" onclick="checkStatus()">
                     <span class="spinner hidden" id="spinner"></span>
-                    <span id="btn-text">🔄 Check Status</span>
+                    <span id="btn-text">Check Status</span>
                 </button>
                 {% endif %}
-                <a href="/" class="btn btn-secondary">🏠 Back to Home</a>
+                <a href="/" class="btn btn-secondary">Back to Home</a>
             </div>
 
             {% if status == 'pending' or status == 'processing' %}
@@ -551,7 +571,7 @@
             } finally {
                 isChecking = false;
                 if (spinner) spinner.classList.add('hidden');
-                if (btnText) btnText.textContent = '🔄 Check Status';
+                if (btnText) btnText.textContent = 'Check Status';
                 if (btn) btn.disabled = false;
                 countdown = 10;
             }
@@ -561,16 +581,6 @@
             const queuePosition = document.getElementById('queue-position');
             if (queuePosition && data.queue_position !== undefined) {
                 queuePosition.textContent = data.queue_position;
-            }
-
-            // Update status icon based on current state
-            const statusIcon = document.getElementById('status-icon');
-            if (statusIcon) {
-                if (data.status === 'processing') {
-                    statusIcon.textContent = '⚙️';
-                } else if (data.status === 'completed') {
-                    statusIcon.textContent = '✅';
-                }
             }
         }
 
@@ -606,17 +616,17 @@
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
-                background: #1e40af;
+                background: #312e81;
                 color: white;
                 padding: 15px 20px;
                 border-radius: 10px;
-                box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.2);
                 z-index: 1000;
                 max-width: 300px;
                 animation: slideIn 0.5s ease-out;
             `;
             reminder.innerHTML = `
-                <strong>💡 Tip:</strong><br>
+                <strong>Tip:</strong><br>
                 Bookmark this page to check your results later!
                 <button onclick="this.parentElement.remove()" style="
                     position: absolute;
@@ -627,7 +637,7 @@
                     color: white;
                     font-size: 1.2rem;
                     cursor: pointer;
-                ">×</button>
+                ">&times;</button>
             `;
 
             const style = document.createElement('style');

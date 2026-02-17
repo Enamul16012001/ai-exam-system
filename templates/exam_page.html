@@ -4,23 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ exam.title }} - In Progress</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
-
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: var(--color-bg);
             min-height: 100vh;
         }
-        
+
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
             color: white;
             padding: 15px 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -138,9 +131,9 @@
         }
         
         .type-nav.current {
-            background: #667eea;
+            background: #4f46e5;
             color: white;
-            border-color: #667eea;
+            border-color: #4f46e5;
         }
         
         .type-icon {
@@ -177,9 +170,9 @@
         }
         
         .nav-question.current {
-            background: #667eea;
+            background: #4f46e5;
             color: white;
-            border-color: #667eea;
+            border-color: #4f46e5;
         }
         
         .nav-question:hover {
@@ -235,8 +228,8 @@
             padding: 12px 20px;
             border-radius: 25px;
             font-weight: 700;
-            color: #667eea;
-            border: 3px solid #667eea;
+            color: #4f46e5;
+            border: 3px solid #4f46e5;
             font-size: 1rem;
             box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
         }
@@ -299,7 +292,7 @@
         }
         
         .question-number {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
             width: 40px;
             height: 40px;
@@ -419,7 +412,7 @@
             height: auto;
             max-height: 400px;
             border-radius: 8px;
-            border: 2px solid #667eea;
+            border: 2px solid #4f46e5;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             cursor: pointer;
             transition: transform 0.3s ease;
@@ -455,12 +448,12 @@
         }
         
         .option:hover {
-            border-color: #667eea;
+            border-color: #4f46e5;
             background: #f8f9ff;
         }
         
         .option.selected {
-            border-color: #667eea;
+            border-color: #4f46e5;
             background: #f0f9ff;
         }
         
@@ -470,7 +463,7 @@
             margin-top: 2px;
             width: 18px;
             height: 18px;
-            accent-color: #667eea;
+            accent-color: #4f46e5;
         }
 
         /* Multi-select indicator styling */
@@ -503,7 +496,7 @@
         
         .option-label {
             font-weight: 600;
-            color: #667eea;
+            color: #4f46e5;
             min-width: 30px;
         }
         
@@ -529,7 +522,7 @@
         
         .answer-textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4f46e5;
         }
         
         .answer-textarea.essay {
@@ -573,7 +566,7 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
         }
         
@@ -657,7 +650,7 @@
         .type-summary-count {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #667eea;
+            color: #4f46e5;
         }
         
         .clear-selection-container {
@@ -696,7 +689,7 @@
         }
         
         /* Section-specific styling */
-        .section-technical { border-left: 5px solid #667eea; }
+        .section-technical { border-left: 5px solid #4f46e5; }
         .section-english { border-left: 5px solid #10b981; }
         .section-mathematics { border-left: 5px solid #f59e0b; }
         .section-bengali { border-left: 5px solid #ef4444; }
@@ -880,7 +873,7 @@
     <div class="loading-overlay" id="loadingOverlay">
         <div class="loading-content">
             <div class="loading-spinner"></div>
-            <h2 class="loading-title">🎯 Submitting Your Exam</h2>
+            <h2 class="loading-title">Submitting Your Exam</h2>
             <p class="loading-message">Please wait while we process your answers and evaluate your responses. This may take a few moments.</p>
             
             <div class="loading-steps">
@@ -938,7 +931,7 @@
             
             <!-- Question Type Summary -->
             <div class="question-type-summary">
-                <h4 style="color: #1e40af; margin-bottom: 10px;">📊 Question Types</h4>
+                <h4 style="color: #1e40af; margin-bottom: 10px;">Question Types</h4>
                 <div class="type-summary-grid">
                     <div class="type-summary-item">
                         <div class="type-summary-count" id="mcqCount">0</div>
@@ -985,7 +978,7 @@
         
         <!-- Question Section -->
         <form method="POST" action="/exam/submit" id="examForm">
-            <input type="hidden" name="session_id" value="{{ session_id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <input type="hidden" name="time_taken" id="timeTakenInput">
             
             {% for question in questions %}
@@ -1072,7 +1065,7 @@
                 </div>
                 {% endif %}
                 
-                <div class="question-text">{{ question.question }}</div>
+                <div class="question-text">{{ question.question|format_text }}</div>
                 
                 <!-- Display Question Images if they exist -->
                 {% if question.image_url or (question.images and question.images|length > 0) %}
@@ -1124,14 +1117,14 @@
                         <input type="checkbox" name="question_{{ question.id }}" value="{{ loop.index0 }}"
                                id="q{{ question.id }}_{{ loop.index0 }}">
                         <span class="option-label">{{ ['A', 'B', 'C', 'D', 'E', 'F'][loop.index0] }})</span>
-                        <span class="option-text">{{ option }}</span>
+                        <span class="option-text">{{ option|format_text }}</span>
                     </div>
                     {% else %}
                     <div class="option" onclick="selectOption(this, {{ loop.index0 }})">
                         <input type="radio" name="question_{{ question.id }}" value="{{ loop.index0 }}"
                                id="q{{ question.id }}_{{ loop.index0 }}">
                         <span class="option-label">{{ ['A', 'B', 'C', 'D', 'E', 'F'][loop.index0] }})</span>
-                        <span class="option-text">{{ option }}</span>
+                        <span class="option-text">{{ option|format_text }}</span>
                     </div>
                     {% endif %}
                     {% endfor %}
@@ -1187,7 +1180,7 @@
             
             <!-- Submit Section -->
             <div class="submit-section" id="submitSection" style="display: none;">
-                <h3>🎯 Ready to Submit?</h3>
+                <h3>Ready to Submit?</h3>
                 <p>Please review your answers before final submission. Once submitted, you cannot make any changes.</p>
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
                     <button type="button" class="btn btn-secondary" onclick="hideSubmitConfirmation()">

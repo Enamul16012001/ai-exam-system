@@ -3,306 +3,296 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Login - Quiz System</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <title>Admin Login - Exam System</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 50%, #3730a3 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
-        
+
         .login-container {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            max-width: 400px;
+            background: var(--color-surface);
+            padding: 48px 40px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-xl);
+            max-width: 420px;
             width: 100%;
-            text-align: center;
         }
-        
+
         .lock-icon {
-            font-size: 4rem;
-            color: #667eea;
-            margin-bottom: 20px;
+            width: 56px;
+            height: 56px;
+            background: var(--color-primary-bg);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
         }
-        
+
+        .lock-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: var(--color-primary);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
         .header h1 {
-            color: #333;
-            font-size: 1.8rem;
-            margin-bottom: 10px;
+            color: var(--color-text);
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 6px;
         }
-        
+
         .header p {
-            color: #666;
-            font-size: 1rem;
-            margin-bottom: 30px;
+            color: var(--color-text-muted);
+            font-size: 0.9375rem;
         }
-        
+
         .form-group {
-            margin-bottom: 25px;
-            text-align: left;
+            margin-bottom: 24px;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: var(--color-text);
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.875rem;
         }
-        
+
         .form-group input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: border-color 0.3s ease;
+            padding: 12px 14px;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-size: 0.9375rem;
+            color: var(--color-text);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
         }
-        
+
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
-        
-        .btn {
+
+        .login-btn {
             width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px;
+            background: var(--color-primary);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
+            border-radius: var(--radius-md);
+            font-family: var(--font-sans);
+            font-size: 0.9375rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all var(--transition-base);
             margin-bottom: 20px;
         }
-        
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+
+        .login-btn:hover {
+            background: var(--color-primary-hover);
+            box-shadow: var(--shadow-md);
         }
-        
-        .btn:active {
-            transform: translateY(0);
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
-        
+
         .error {
-            background: #fee;
-            color: #c33;
-            padding: 15px;
-            border-radius: 8px;
+            background: var(--color-danger-bg);
+            color: #991b1b;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
             margin-bottom: 20px;
-            border-left: 4px solid #c33;
-            text-align: left;
+            border-left: 4px solid var(--color-danger);
+            font-size: 0.9375rem;
         }
-        
+
+        .security-note {
+            background: var(--color-info-bg);
+            color: #075985;
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            margin-bottom: 24px;
+            border-left: 4px solid var(--color-info);
+            font-size: 0.875rem;
+        }
+
         .back-link {
-            color: #667eea;
+            display: block;
+            text-align: center;
+            color: var(--color-primary);
             text-decoration: none;
             font-weight: 600;
-            padding: 10px 20px;
-            border: 2px solid #667eea;
-            border-radius: 8px;
-            display: inline-block;
-            transition: all 0.3s ease;
+            font-size: 0.875rem;
+            padding: 10px;
+            border-radius: var(--radius-md);
+            transition: background var(--transition-fast);
         }
-        
+
         .back-link:hover {
-            background: #667eea;
-            color: white;
+            background: var(--color-primary-bg);
         }
-        
-        .security-note {
-            background: #f0f9ff;
-            color: #0369a1;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            border-left: 4px solid #0369a1;
-            font-size: 0.9rem;
-            text-align: left;
-        }
-        
+
         .input-container {
             position: relative;
         }
-        
+
         .toggle-password {
             position: absolute;
-            right: 15px;
+            right: 12px;
             top: 50%;
             transform: translateY(-50%);
             background: none;
             border: none;
-            color: #666;
+            color: var(--color-text-muted);
             cursor: pointer;
-            font-size: 1.2rem;
-            padding: 5px;
+            padding: 4px;
+            font-size: 0.875rem;
         }
-        
+
         .toggle-password:hover {
-            color: #667eea;
+            color: var(--color-primary);
         }
-        
+
+        .demo-hint {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid var(--color-border);
+            text-align: center;
+        }
+
+        .demo-hint p {
+            color: var(--color-text-muted);
+            font-size: 0.8125rem;
+        }
+
+        .demo-hint code {
+            background: var(--color-bg-subtle);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.8125rem;
+            color: var(--color-text-secondary);
+        }
+
         @media (max-width: 600px) {
             .login-container {
-                padding: 30px 20px;
+                padding: 32px 24px;
                 margin: 10px;
             }
-            
+
             .header h1 {
-                font-size: 1.5rem;
+                font-size: 1.3rem;
             }
-            
-            .lock-icon {
-                font-size: 3rem;
-            }
-        }
-        
-        .attempts-warning {
-            background: #fef2f2;
-            color: #991b1b;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            border-left: 4px solid #ef4444;
-            font-size: 0.9rem;
-            text-align: left;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <div class="lock-icon">🔐</div>
-        
+        <div class="lock-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+
         <div class="header">
             <h1>Admin Access</h1>
-            <p>Enter the secret key to access the admin dashboard</p>
+            <p>Enter the secret key to continue</p>
         </div>
-        
+
         {% if error %}
         <div class="error">
-            <strong>❌ Access Denied:</strong> {{ error }}
+            <strong>Access Denied:</strong> {{ error }}
         </div>
         {% endif %}
-        
+
         <div class="security-note">
-            <strong>🛡️ Security Notice:</strong>
-            This area is restricted to authorized administrators only. 
-            All access attempts are logged and monitored.
+            <strong>Security Notice:</strong>
+            This area is restricted to authorized administrators only.
         </div>
-        
+
         <form method="POST" action="/admin/login" id="loginForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="form-group">
-                <label for="secret_key">🔑 Secret Key</label>
+                <label for="secret_key">Secret Key</label>
                 <div class="input-container">
-                    <input 
-                        type="password" 
-                        id="secret_key" 
-                        name="secret_key" 
-                        required 
+                    <input
+                        type="password"
+                        id="secret_key"
+                        name="secret_key"
+                        required
                         placeholder="Enter admin secret key"
                         autocomplete="off"
                         maxlength="50"
                     >
-                    <button type="button" class="toggle-password" onclick="togglePassword()">
-                        👁️
+                    <button type="button" class="toggle-password" onclick="togglePassword()" aria-label="Toggle password visibility">
+                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                     </button>
                 </div>
             </div>
-            
-            <button type="submit" class="btn">
-                🚪 Enter Admin Dashboard
+
+            <button type="submit" class="login-btn" id="submitBtn">
+                Sign In
             </button>
         </form>
-        
+
         <a href="/" class="back-link">
-            ← Back to Quiz Home
+            &larr; Back to Home
         </a>
-        
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #f0f0f0;">
-            <p style="color: #666; font-size: 0.8rem;">
-                <strong>Current Secret Key (for demo):</strong> <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">exam_admin_2025</code>
-            </p>
-            <p style="color: #999; font-size: 0.7rem; margin-top: 10px;">
-                ⚠️ Remove this hint in production environment
-            </p>
+
+        <div class="demo-hint">
+            <p><strong>Demo key:</strong> <code>exam_admin_2025</code></p>
+            <p style="margin-top: 6px; font-size: 0.75rem; color: var(--color-text-muted);">Remove this hint in production</p>
         </div>
     </div>
-    
+
     <script>
         function togglePassword() {
             const passwordField = document.getElementById('secret_key');
-            const toggleButton = document.querySelector('.toggle-password');
-            
+            const eyeIcon = document.getElementById('eyeIcon');
+
             if (passwordField.type === 'password') {
                 passwordField.type = 'text';
-                toggleButton.textContent = '🙈';
+                eyeIcon.innerHTML = '<path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/>';
             } else {
                 passwordField.type = 'password';
-                toggleButton.textContent = '👁️';
+                eyeIcon.innerHTML = '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
             }
         }
-        
-        // Auto-focus on secret key input
+
         document.getElementById('secret_key').focus();
-        
-        // Add loading state on form submit
+
         document.getElementById('loginForm').addEventListener('submit', function() {
-            const submitBtn = document.querySelector('.btn');
-            submitBtn.innerHTML = '🔄 Verifying...';
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.textContent = 'Verifying...';
             submitBtn.disabled = true;
         });
-        
-        // Clear input on failed attempt
+
         {% if error %}
         document.getElementById('secret_key').value = '';
         document.getElementById('secret_key').focus();
-        {% endif %}
-        
-        // Add shake animation on error
-        {% if error %}
+
         const container = document.querySelector('.login-container');
-        container.style.animation = 'shake 0.5s ease-in-out';
-        
+        container.style.animation = 'shake 0.4s ease-in-out';
         const style = document.createElement('style');
-        style.textContent = `
-            @keyframes shake {
-                0%, 100% { transform: translateX(0); }
-                25% { transform: translateX(-5px); }
-                75% { transform: translateX(5px); }
-            }
-        `;
+        style.textContent = '@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }';
         document.head.appendChild(style);
         {% endif %}
-        
-        // Prevent right-click and dev tools (basic protection)
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-        });
-        
-        document.addEventListener('keydown', function(e) {
-            // Disable F12, Ctrl+Shift+I, Ctrl+U
-            if (e.keyCode === 123 || 
-                (e.ctrlKey && e.shiftKey && e.keyCode === 73) || 
-                (e.ctrlKey && e.keyCode === 85)) {
-                e.preventDefault();
-            }
-        });
     </script>
 </body>
 </html>

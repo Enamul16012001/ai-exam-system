@@ -4,7 +4,6 @@ Handles asynchronous exam evaluation with rate limiting, retries, and fault tole
 This prevents system crashes when many candidates submit exams simultaneously.
 """
 
-import asyncio
 import threading
 import time
 import json
@@ -487,10 +486,9 @@ class EvaluationQueue:
             section_type = question.get('section_type', 'technical')
 
             if question['type'] == 'mcq':
-                # Auto-evaluate MCQ
-                result = self._evaluate_mcq(question, candidate_answer,
-                                           task.negative_marking_config, section_type,
-                                           task.multi_select_scoring_mode)
+                result = evaluate_mcq_answer(question, candidate_answer,
+                                             task.negative_marking_config, section_type,
+                                             task.multi_select_scoring_mode)
                 negative_marks += result.get('negative_marks_applied', 0)
             else:
                 # For non-MCQ, mark as pending manual review
@@ -520,24 +518,8 @@ class EvaluationQueue:
             'percentage': percentage,
             'question_results': question_results,
             'overall_feedback': 'Results recorded. Detailed feedback will be available after manual review.',
-            'performance_level': self._get_performance_level(percentage)
+            'performance_level': get_performance_level(percentage)
         }
-
-    def _evaluate_mcq(self, question: Dict, candidate_answer: str,
-                      negative_marking_config: Dict, section_type: str,
-                      multi_select_scoring_mode: str = 'partial') -> Dict:
-        """Evaluate a single MCQ question.
-
-        Delegates to the shared evaluate_mcq_answer function for consistency.
-        """
-        return evaluate_mcq_answer(question, candidate_answer, negative_marking_config, section_type, multi_select_scoring_mode)
-
-    def _get_performance_level(self, percentage: float) -> str:
-        """Get performance level based on percentage.
-
-        Delegates to the shared get_performance_level function for consistency.
-        """
-        return get_performance_level(percentage)
 
     def _save_evaluation_result(self, task: EvaluationTask, evaluation: Dict) -> bool:
         """Save the evaluation result to database"""

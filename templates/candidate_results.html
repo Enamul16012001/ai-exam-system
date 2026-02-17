@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Results - {{ exam_title }}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #f8fafc;
             min-height: 100vh;
             padding: 20px;
         }
@@ -29,7 +29,7 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
             padding: 30px;
             text-align: center;
@@ -133,7 +133,7 @@
         .detail-value {
             font-size: 1.8rem;
             font-weight: bold;
-            color: #667eea;
+            color: #4f46e5;
             margin-bottom: 5px;
         }
         
@@ -413,7 +413,7 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
         }
         
@@ -569,12 +569,12 @@
                             <span style="color: #ef4444; font-weight: bold;">❌ Incorrect</span>
                             {% endif %}
                         {% else %}
-                        <span style="color: #667eea; font-weight: bold;">📝 Reviewed</span>
+                        <span style="color: #4f46e5; font-weight: bold;">📝 Reviewed</span>
                         {% endif %}
                     </div>
                 </div>
                 
-                <div class="question-text">{{ result.question_text }}</div>
+                <div class="question-text">{{ result.question_text|format_text }}</div>
                 
                 {% if result.question_type == 'mcq' %}
                 <div class="mcq-answer-display" style="margin: 15px 0;">
@@ -674,43 +674,43 @@
         
         // Download results as text (simplified)
         function downloadResults() {
-            const candidate = '{{ candidate_name }}';
-            const examTitle = '{{ exam_title }}';
-            const score = '{{ evaluation.obtained_marks }}/{{ evaluation.total_marks }}';
-            const percentage = '{{ "%.1f"|format(evaluation.percentage) }}%';
-            const performance = '{{ evaluation.performance_level }}';
-            
+            const candidate = {{ candidate_name|tojson }};
+            const examTitle = {{ exam_title|tojson }};
+            const score = {{ evaluation.obtained_marks|tojson }} + '/' + {{ evaluation.total_marks|tojson }};
+            const percentage = {{ "%.1f"|format(evaluation.percentage)|tojson }} + '%';
+            const performance = {{ evaluation.performance_level|tojson }};
+
             let content = `EXAM RESULTS\n`;
             content += `=============\n\n`;
             content += `Exam: ${examTitle}\n`;
             content += `Candidate: ${candidate}\n`;
-            content += `ID: {{ candidate_id }}\n`;
-            content += `Time Taken: {{ time_taken }}\n`;
+            content += `ID: ${ {{ candidate_id|tojson }} }\n`;
+            content += `Time Taken: ${ {{ time_taken|tojson }} }\n`;
             content += `Score: ${score} (${percentage})\n`;
             content += `Performance: ${performance}\n\n`;
-            
+
             {% if evaluation.overall_feedback %}
             content += `OVERALL FEEDBACK:\n`;
-            content += `{{ evaluation.overall_feedback }}\n\n`;
+            content += {{ evaluation.overall_feedback|tojson }} + `\n\n`;
             {% endif %}
-            
+
             content += `QUESTION BREAKDOWN:\n`;
             content += `==================\n\n`;
-            
+
             {% for result in evaluation.question_results %}
-            content += `Question {{ loop.index }}: {{ result.marks_obtained }}/{{ result.marks_total }} marks\n`;
-            content += `Type: {{ result.question_type.upper() }}\n`;
-            content += `Question: {{ result.question_text }}\n`;
+            content += `Question {{ loop.index }}: ` + {{ result.marks_obtained|tojson }} + `/` + {{ result.marks_total|tojson }} + ` marks\n`;
+            content += `Type: ` + {{ result.question_type.upper()|tojson }} + `\n`;
+            content += `Question: ` + {{ result.question_text|tojson }} + `\n`;
             {% if result.question_type == 'mcq' %}
-            content += `Your Answer: {{ result.selected_option if result.candidate_answer else 'No answer' }}\n`;
+            content += `Your Answer: ` + {{ (result.selected_option if result.candidate_answer else 'No answer')|tojson }} + `\n`;
             {% if not result.is_correct %}
-            content += `Correct Answer: {{ result.correct_option if result.correct_answer is defined else 'N/A' }}\n`;
+            content += `Correct Answer: ` + {{ (result.correct_option if result.correct_answer is defined else 'N/A')|tojson }} + `\n`;
             {% endif %}
             {% else %}
-            content += `Your Answer: {{ result.candidate_answer or 'No answer provided' }}\n`;
+            content += `Your Answer: ` + {{ (result.candidate_answer or 'No answer provided')|tojson }} + `\n`;
             {% endif %}
             {% if result.feedback %}
-            content += `Feedback: {{ result.feedback }}\n`;
+            content += `Feedback: ` + {{ result.feedback|tojson }} + `\n`;
             {% endif %}
             content += `\n`;
             {% endfor %}
@@ -809,7 +809,7 @@
                 width: 50px;
                 height: 50px;
                 border-radius: 50%;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
                 color: white;
                 border: none;
                 font-size: 1.5rem;
@@ -882,7 +882,7 @@
                     padding: 25px;
                     margin: 20px 30px;
                     border-radius: 12px;
-                    border-left: 5px solid #667eea;
+                    border-left: 5px solid #4f46e5;
                 `;
                 
                 tipsSection.innerHTML = `

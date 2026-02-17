@@ -12,6 +12,17 @@ from typing import Dict, List, Optional
 import os
 
 
+def _get_performance_level(percentage: float) -> str:
+    """Get performance level based on percentage (local copy to avoid circular import)"""
+    if percentage >= 85:
+        return "Excellent"
+    elif percentage >= 70:
+        return "Good"
+    elif percentage >= 50:
+        return "Average"
+    return "Poor"
+
+
 class ExamDatabase:
     def __init__(self, db_path: str = "exam_system.db"):
         """Initialize the database connection and create tables if they don't exist"""
@@ -214,8 +225,66 @@ class ExamDatabase:
                 )
             ''')
 
+            # Create indexes for frequently queried columns
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_questions_exam_id ON questions(exam_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_exam_results_exam_id ON exam_results(exam_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_exam_results_candidate ON exam_results(exam_id, candidate_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_exam_results_status ON exam_results(evaluation_status)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_candidate_answers_result ON candidate_answers(result_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_candidate_answers_question ON candidate_answers(question_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_exam_sessions_exam_candidate ON exam_sessions(exam_id, candidate_id, is_submitted)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_live_sessions_exam ON live_sessions(exam_id, is_active)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_question_images_question ON question_images(question_id)')
+            cursor.execute('CREATE INDEX IF NOT EXISTS idx_detailed_evaluations_answer ON detailed_evaluations(answer_id)')
+
             conn.commit()
             print("✅ Exam database initialized successfully with image support and persistent sessions")
+
+    def _get_connection(self):
+        """Get a new database connection (caller must close or use as context manager)"""
+        return sqlite3.connect(self.db_path)
+
+    def _parse_question_row(self, row) -> Dict:
+        """Parse a question row from the standard SELECT into a dict.
+
+        Expected column order:
+            id, section_type, question_type, question_text, options, correct_answer,
+            expected_answer, evaluation_criteria, marks, explanation, image_url, image_caption,
+            is_multi_select, correct_answers
+        """
+        question = {
+            'id': row[0], 'section_type': row[1], 'type': row[2],
+            'question': row[3], 'marks': row[8], 'explanation': row[9],
+            'image_url': row[10], 'image_caption': row[11],
+            'is_multi_select': bool(row[12]) if row[12] is not None else False
+        }
+
+        # Load additional images
+        question['images'] = self.get_question_images(row[0])
+
+        if row[4]:  # MCQ - has options
+            question['options'] = json.loads(row[4])
+            if question['is_multi_select']:
+                if row[13]:
+                    question['correct_answers'] = json.loads(row[13])
+                else:
+                    question['correct_answers'] = [row[5]] if row[5] is not None else []
+                question['correct_answer'] = question['correct_answers']
+            else:
+                question['correct_answer'] = row[5]
+                question['correct_answers'] = [row[5]] if row[5] is not None else []
+        else:  # Short/Essay
+            question['expected_answer'] = row[6]
+            question['evaluation_criteria'] = row[7]
+
+        return question
+
+    # Standard SQL for selecting question fields (reused across queries)
+    _QUESTION_SELECT_COLS = '''
+        id, section_type, question_type, question_text, options, correct_answer,
+        expected_answer, evaluation_criteria, marks, explanation, image_url, image_caption,
+        is_multi_select, correct_answers
+    '''
 
     def _add_column_if_not_exists(self, cursor, table_name: str, column_name: str, column_definition: str):
         """Add a column to table if it doesn't exist"""
@@ -981,47 +1050,13 @@ class ExamDatabase:
     def get_exam_questions(self, exam_id: str) -> List[Dict]:
         """Get all questions for an exam with images"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT id, section_type, question_type, question_text, options, correct_answer,
-                           expected_answer, evaluation_criteria, marks, explanation, image_url, image_caption,
-                           is_multi_select, correct_answers
+                cursor.execute(f'''
+                    SELECT {self._QUESTION_SELECT_COLS}
                     FROM questions WHERE exam_id = ? ORDER BY section_type, question_order
                 ''', (exam_id,))
-
-                questions = []
-                for row in cursor.fetchall():
-                    question = {
-                        'id': row[0], 'section_type': row[1], 'type': row[2],
-                        'question': row[3], 'marks': row[8], 'explanation': row[9],
-                        'image_url': row[10], 'image_caption': row[11],
-                        'is_multi_select': bool(row[12]) if row[12] is not None else False
-                    }
-
-                    # Get additional images from question_images table
-                    question['images'] = self.get_question_images(row[0])
-
-                    if row[4]:  # MCQ
-                        question['options'] = json.loads(row[4])
-                        # For multi-select MCQs, use correct_answers (JSON array)
-                        if question['is_multi_select']:
-                            if row[13]:
-                                question['correct_answers'] = json.loads(row[13])
-                            else:
-                                # Fallback: use correct_answer as single item list
-                                question['correct_answers'] = [row[5]] if row[5] is not None else []
-                            question['correct_answer'] = question['correct_answers']  # For compatibility
-                        else:
-                            question['correct_answer'] = row[5]
-                            question['correct_answers'] = [row[5]] if row[5] is not None else []
-                    else:  # Short/Essay
-                        question['expected_answer'] = row[6]
-                        question['evaluation_criteria'] = row[7]
-
-                    questions.append(question)
-
-                return questions
+                return [self._parse_question_row(row) for row in cursor.fetchall()]
         except sqlite3.Error as e:
             print(f"❌ Error getting exam questions: {e}")
             return []
@@ -1029,50 +1064,20 @@ class ExamDatabase:
     def get_exam_questions_by_section(self, exam_id: str) -> Dict[str, List[Dict]]:
         """Get questions grouped by section type with images"""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT id, section_type, question_type, question_text, options, correct_answer,
-                           expected_answer, evaluation_criteria, marks, explanation, image_url, image_caption,
-                           is_multi_select, correct_answers
+                cursor.execute(f'''
+                    SELECT {self._QUESTION_SELECT_COLS}
                     FROM questions WHERE exam_id = ? ORDER BY section_type, question_order
                 ''', (exam_id,))
 
                 sections = {}
                 for row in cursor.fetchall():
-                    section_type = row[1]
+                    question = self._parse_question_row(row)
+                    section_type = question['section_type']
                     if section_type not in sections:
                         sections[section_type] = []
-
-                    question = {
-                        'id': row[0], 'section_type': section_type, 'type': row[2],
-                        'question': row[3], 'marks': row[8], 'explanation': row[9],
-                        'image_url': row[10], 'image_caption': row[11],
-                        'is_multi_select': bool(row[12]) if row[12] is not None else False
-                    }
-
-                    # Get additional images
-                    question['images'] = self.get_question_images(row[0])
-
-                    if row[4]:  # MCQ
-                        question['options'] = json.loads(row[4])
-                        # For multi-select MCQs, use correct_answers (JSON array)
-                        if question['is_multi_select']:
-                            if row[13]:
-                                question['correct_answers'] = json.loads(row[13])
-                            else:
-                                # Fallback: use correct_answer as single item list
-                                question['correct_answers'] = [row[5]] if row[5] is not None else []
-                            question['correct_answer'] = question['correct_answers']
-                        else:
-                            question['correct_answer'] = row[5]
-                            question['correct_answers'] = [row[5]] if row[5] is not None else []
-                    else:  # Short/Essay
-                        question['expected_answer'] = row[6]
-                        question['evaluation_criteria'] = row[7]
-
                     sections[section_type].append(question)
-
                 return sections
         except sqlite3.Error as e:
             print(f"❌ Error getting exam questions by section: {e}")
@@ -1523,23 +1528,12 @@ class ExamDatabase:
                 
                 final_score = total_obtained - total_negative
                 new_percentage = (final_score / total_marks) * 100 if total_marks > 0 else 0
-                
-                # Determine performance level
-                if new_percentage >= 85:
-                    performance_level = "Excellent"
-                elif new_percentage >= 70:
-                    performance_level = "Good"
-                elif new_percentage >= 50:
-                    performance_level = "Average"
-                else:
-                    performance_level = "Poor"
-                
-                # Update exam results
+
                 cursor.execute('''
-                    UPDATE exam_results 
+                    UPDATE exam_results
                     SET obtained_marks = ?, negative_marks = ?, percentage = ?, performance_level = ?
                     WHERE id = ?
-                ''', (final_score, total_negative, new_percentage, performance_level, result_id))
+                ''', (final_score, total_negative, new_percentage, _get_performance_level(new_percentage), result_id))
                 
                 conn.commit()
                 return True
@@ -2296,25 +2290,15 @@ class ExamDatabase:
                 ''', (result_id,))
                 total_marks = cursor.fetchone()[0] or 0
 
-                # Calculate percentage and performance
                 percentage = (total_obtained / total_marks * 100) if total_marks > 0 else 0
-                if percentage >= 85:
-                    performance = "Excellent"
-                elif percentage >= 70:
-                    performance = "Good"
-                elif percentage >= 50:
-                    performance = "Average"
-                else:
-                    performance = "Poor"
 
-                # Update main result
                 cursor.execute('''
                     UPDATE exam_results
                     SET obtained_marks = ?, percentage = ?, performance_level = ?,
                         evaluation_status = 'completed', evaluated_at = CURRENT_TIMESTAMP,
                         evaluation_error = NULL
                     WHERE id = ?
-                ''', (total_obtained, percentage, performance, result_id))
+                ''', (total_obtained, percentage, _get_performance_level(percentage), result_id))
 
                 conn.commit()
                 print(f"✅ Manual evaluation saved for result: {result_id[:8]}...")

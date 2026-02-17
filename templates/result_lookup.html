@@ -4,18 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Check Results - {{ exam.title }}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--color-bg);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -24,42 +18,38 @@
         }
 
         .container {
-            background: white;
+            background: var(--color-surface);
             padding: 40px;
-            border-radius: 15px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
             max-width: 500px;
             width: 100%;
+            border: 1px solid var(--color-border);
         }
 
         .header {
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .header .icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
+            border-bottom: 1px solid var(--color-border);
         }
 
         .header h1 {
-            color: #333;
+            color: var(--color-text);
             font-size: 1.8rem;
             margin-bottom: 10px;
         }
 
         .header .subtitle {
-            color: #666;
+            color: var(--color-text-secondary);
             font-size: 1rem;
         }
 
         .exam-title {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #312e81 0%, #4338ca 100%);
             color: white;
             padding: 15px 20px;
-            border-radius: 10px;
+            border-radius: var(--radius-lg);
             text-align: center;
             margin-bottom: 25px;
         }
@@ -76,57 +66,67 @@
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            color: #333;
+            color: var(--color-text);
             font-weight: 600;
+            font-size: 0.875rem;
         }
 
         .form-group input {
             width: 100%;
-            padding: 14px 16px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
+            padding: 12px 14px;
+            border: 1.5px solid var(--color-border);
+            border-radius: var(--radius-md);
+            font-size: 0.9375rem;
+            font-family: var(--font-sans);
+            color: var(--color-text);
+            transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
 
-        .btn {
+        .form-group input::placeholder {
+            color: var(--color-text-muted);
+        }
+
+        .btn-submit {
             width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 14px;
+            background: var(--color-primary);
             color: white;
             border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
             font-weight: 600;
+            font-family: var(--font-sans);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all var(--transition-base);
         }
 
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        .btn-submit:hover {
+            background: var(--color-primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
         }
 
         .error {
-            background: #fef2f2;
-            color: #dc2626;
+            background: var(--color-danger-bg);
+            color: var(--color-danger);
             padding: 15px;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             margin-bottom: 20px;
-            border: 1px solid #fecaca;
+            border: 1px solid var(--color-danger-border);
             text-align: center;
+            font-size: 0.9375rem;
         }
 
         .info-box {
-            background: #f0f9ff;
-            border: 1px solid #bae6fd;
-            border-radius: 8px;
+            background: var(--color-info-bg);
+            border: 1px solid var(--color-info-border);
+            border-radius: var(--radius-md);
             padding: 15px;
             margin-top: 25px;
         }
@@ -149,9 +149,10 @@
         }
 
         .back-link a {
-            color: #667eea;
+            color: var(--color-primary);
             text-decoration: none;
             font-weight: 500;
+            font-size: 0.9375rem;
         }
 
         .back-link a:hover {
@@ -162,7 +163,6 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="icon">📊</div>
             <h1>Check Your Results</h1>
             <p class="subtitle">Enter your Candidate ID to view your exam results</p>
         </div>
@@ -178,6 +178,7 @@
         {% endif %}
 
         <form method="POST" action="/exam/{{ exam_link }}/results">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="form-group">
                 <label for="candidate_id">Candidate ID</label>
                 <input type="text" id="candidate_id" name="candidate_id"
@@ -185,7 +186,7 @@
                        required autofocus>
             </div>
 
-            <button type="submit" class="btn">
+            <button type="submit" class="btn-submit">
                 View My Results
             </button>
         </form>

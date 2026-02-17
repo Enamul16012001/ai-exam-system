@@ -4,23 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exam Results - {{ exam.title }}</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
-
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F393;</text></svg>">
+    <link rel="stylesheet" href="/static/css/base.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f7fa;
+            background: #f8fafc;
             min-height: 100vh;
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
             padding: 20px 0;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -51,7 +50,7 @@
         
         .nav-link:hover {
             background: white;
-            color: #667eea;
+            color: #4f46e5;
         }
         
         .container {
@@ -85,7 +84,7 @@
         .detail-value {
             font-size: 1.5rem;
             font-weight: bold;
-            color: #667eea;
+            color: #4f46e5;
             margin-bottom: 5px;
         }
         
@@ -121,7 +120,7 @@
         .stat-number {
             font-size: 2rem;
             font-weight: bold;
-            color: #667eea;
+            color: #4f46e5;
             margin-bottom: 5px;
         }
         
@@ -172,7 +171,7 @@
         
         .filter-select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4f46e5;
         }
 
         /* Enhanced Sorting Controls */
@@ -220,7 +219,7 @@
         }
 
         .sort-btn.active {
-            background: #667eea;
+            background: #4f46e5;
             color: white;
         }
 
@@ -278,13 +277,13 @@
         .results-table th.sort-asc::after {
             content: '↑';
             opacity: 1;
-            color: #667eea;
+            color: #4f46e5;
         }
 
         .results-table th.sort-desc::after {
             content: '↓';
             opacity: 1;
-            color: #667eea;
+            color: #4f46e5;
         }
         
         .results-table td {
@@ -460,7 +459,7 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             color: white;
         }
         
@@ -559,7 +558,7 @@
         .modal-summary-value {
             font-size: 1.8rem;
             font-weight: bold;
-            color: #667eea;
+            color: #4f46e5;
             margin-bottom: 5px;
         }
         
@@ -1509,7 +1508,7 @@
                         box-shadow: 0 25px 50px rgba(0,0,0,0.3);
                     ">
                         <div style="
-                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
                             color: white;
                             padding: 25px;
                             border-radius: 15px 15px 0 0;
@@ -1561,7 +1560,7 @@
                                     <div class="modal-summary-label">Percentage</div>
                                 </div>
                                 <div class="modal-summary-card">
-                                    <div style="font-size: 1.2rem; font-weight: bold; color: #667eea;">${data.performance_level}</div>
+                                    <div style="font-size: 1.2rem; font-weight: bold; color: #4f46e5;">${data.performance_level}</div>
                                     <div class="modal-summary-label">Performance</div>
                                 </div>
                             </div>
