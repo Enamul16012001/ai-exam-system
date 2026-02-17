@@ -12,7 +12,7 @@ An AI-powered examination platform built with FastAPI. Admins create exams with 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/Enamul16012001/ai-exam-system.git
+git clone -b v2 --single-branch https://github.com/Enamul16012001/ai-exam-system.git
 cd ai-exam-system
 ```
 
