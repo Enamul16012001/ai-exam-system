@@ -274,7 +274,7 @@ class EvaluationQueue:
                 # Get next task
                 try:
                     task = self._queue.get(timeout=1)
-                except:
+                except Exception:
                     continue
 
                 # Process the task
@@ -357,7 +357,7 @@ class EvaluationQueue:
                 for callback in self._on_complete_callbacks:
                     try:
                         callback(result_id, evaluation_result)
-                    except:
+                    except Exception:
                         pass
             else:
                 raise Exception("Failed to save evaluation results")
@@ -461,7 +461,7 @@ class EvaluationQueue:
                     for callback in self._on_error_callbacks:
                         try:
                             callback(result_id, f"Permanent failure after all retries: {error_msg}")
-                        except:
+                        except Exception:
                             pass
 
     def _evaluate_with_feedback(self, task: EvaluationTask) -> Dict:
@@ -563,7 +563,7 @@ class EvaluationQueue:
                         completed_time = datetime.fromisoformat(completed_at)
                         if completed_time < cutoff:
                             to_remove.append(result_id)
-                    except:
+                    except (ValueError, TypeError):
                         pass
 
             for result_id in to_remove:

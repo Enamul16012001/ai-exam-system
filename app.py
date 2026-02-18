@@ -1463,71 +1463,242 @@ async def update_session_activity(session_id: str):
 
 @app.post("/admin/download-result")
 async def download_result_pdf(request: Request, session_id: str = Depends(verify_admin_access)):
-    """Generate and download result report"""
+    """Generate and download a full answer script report as print-friendly HTML"""
     try:
         form_data = await request.form()
         result_id = form_data.get("result_id")
-        
+
         if not result_id:
             raise HTTPException(status_code=400, detail="Result ID is required")
-        
+
         result_details = db.get_result_details(result_id)
         if not result_details:
             raise HTTPException(status_code=404, detail="Result not found")
-        
-        # Generate HTML content for download (escape all user-supplied data)
+
         esc = html_module.escape
-        if not result_details.get('has_feedback', True):
-            # Simple submission confirmation
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head><title>Exam Submission - {esc(result_details['candidate_name'])}</title></head>
-            <body>
-                <h1>📋 Exam Submission Confirmation</h1>
-                <h2>{esc(result_details['exam_title'])}</h2>
-                <p><strong>Name:</strong> {esc(result_details['candidate_name'])}</p>
-                <p><strong>ID:</strong> {esc(result_details['candidate_id'])}</p>
-                <p><strong>Time Taken:</strong> {esc(str(result_details['time_taken']))}</p>
-                <p><strong>Status:</strong> Successfully Submitted</p>
-            </body>
-            </html>
-            """
-        else:
-            # Full results with sections
-            sections = {}
-            for question in result_details['questions']:
-                section_type = question.get('section_type', 'technical')
-                if section_type not in sections:
-                    sections[section_type] = []
-                sections[section_type].append(question)
+        has_feedback = result_details.get('has_feedback', True)
+        negative_marks = result_details.get('negative_marks', 0)
 
-            html_content = f"""
-            <!DOCTYPE html>
-            <html>
-            <head><title>Exam Results - {esc(result_details['candidate_name'])}</title></head>
-            <body>
-                <h1>📊 Exam Results Report</h1>
-                <h2>{esc(result_details['exam_title'])}</h2>
-                <p><strong>Name:</strong> {esc(result_details['candidate_name'])}</p>
-                <p><strong>Score:</strong> {result_details['obtained_marks']}/{result_details['total_marks']} ({result_details['percentage']:.1f}%)</p>
-                <p><strong>Performance:</strong> {esc(result_details['performance_level'])}</p>
+        # Group questions by section
+        sections = {}
+        for question in result_details['questions']:
+            section_type = question.get('section_type', 'general')
+            if section_type not in sections:
+                sections[section_type] = []
+            sections[section_type].append(question)
 
-                <!-- Questions and answers would be formatted here -->
-                <h3>Detailed Results</h3>
-                <p>Total Questions: {len(result_details['questions'])}</p>
-            </body>
-            </html>
+        # Build questions HTML
+        questions_html = ""
+        question_number = 1
+        letters = ['A', 'B', 'C', 'D', 'E', 'F']
+
+        for section_type, section_questions in sections.items():
+            display_name = section_type.replace('_', ' ').title()
+            section_obtained = sum(q.get('marks_obtained', 0) for q in section_questions)
+            section_negative = sum(q.get('negative_marks_applied', 0) for q in section_questions)
+            section_total = sum(q.get('marks_total', 0) for q in section_questions)
+
+            questions_html += f"""
+            <div class="section">
+                <div class="section-header">
+                    <h2>{esc(display_name)}</h2>
+                    <span class="section-score">{section_obtained}/{section_total} marks{f' (−{section_negative})' if section_negative else ''}</span>
+                </div>
             """
-        
+
+            for q in section_questions:
+                q_type = q.get('question_type', 'unknown').upper()
+                marks_obtained = q.get('marks_obtained', 0)
+                marks_total = q.get('marks_total', 0)
+                neg_applied = q.get('negative_marks_applied', 0)
+                is_correct = q.get('is_correct')
+
+                if is_correct is True:
+                    status_class = 'correct'
+                    status_label = 'Correct'
+                elif is_correct is False:
+                    status_class = 'incorrect'
+                    status_label = 'Incorrect'
+                else:
+                    status_class = 'partial'
+                    status_label = 'Partial'
+
+                questions_html += f"""
+                <div class="question">
+                    <div class="question-header">
+                        <span class="question-number">Q{question_number}.</span>
+                        <span class="question-type">[{esc(q_type)}]</span>
+                        <span class="question-marks {status_class}">{marks_obtained}/{marks_total}{f' (−{neg_applied})' if neg_applied else ''} — {status_label}</span>
+                    </div>
+                    <div class="question-text">{esc(q.get('question_text', ''))}</div>
+                """
+
+                # MCQ: show options with correct/selected highlighting
+                if q_type == 'MCQ' and q.get('options'):
+                    questions_html += '<div class="options">'
+                    selected_option = q.get('selected_option', '')
+                    correct_option = q.get('correct_option', '')
+
+                    if q.get('is_multi_select'):
+                        # Multi-select MCQ
+                        candidate_answer = str(q.get('candidate_answer', ''))
+                        selected_indices = set()
+                        if candidate_answer:
+                            for a in candidate_answer.split(','):
+                                if a.strip().isdigit():
+                                    selected_indices.add(int(a.strip()))
+
+                        correct_answers = q.get('correct_answers', [])
+                        correct_set = set(correct_answers) if correct_answers else set()
+
+                        for idx, option in enumerate(q['options']):
+                            letter = letters[idx] if idx < 6 else str(idx + 1)
+                            is_selected = idx in selected_indices
+                            is_correct_opt = idx in correct_set
+                            css_classes = []
+                            markers = []
+                            if is_selected and is_correct_opt:
+                                css_classes.append('correct')
+                                markers.append('&#10003; Your answer (Correct)')
+                            elif is_selected and not is_correct_opt:
+                                css_classes.append('incorrect')
+                                markers.append('&#10007; Your answer')
+                            elif not is_selected and is_correct_opt:
+                                css_classes.append('correct-answer')
+                                markers.append('&#10003; Correct')
+                            cls = f' class="{" ".join(css_classes)}"' if css_classes else ''
+                            marker_html = f' <span class="marker">{" | ".join(markers)}</span>' if markers else ''
+                            questions_html += f'<div class="option"{cls}><span class="option-letter">{letter})</span> <span class="option-text">{esc(str(option))}</span>{marker_html}</div>'
+                    else:
+                        # Single-select MCQ
+                        candidate_answer = q.get('candidate_answer')
+                        correct_answer_idx = q.get('correct_answer')
+                        selected_idx = int(candidate_answer) if candidate_answer is not None and str(candidate_answer).isdigit() else -1
+
+                        for idx, option in enumerate(q['options']):
+                            letter = letters[idx] if idx < 6 else str(idx + 1)
+                            is_selected = idx == selected_idx
+                            is_correct_opt = correct_answer_idx is not None and idx == correct_answer_idx
+                            css_classes = []
+                            markers = []
+                            if is_selected and is_correct_opt:
+                                css_classes.append('correct')
+                                markers.append('&#10003; Your answer (Correct)')
+                            elif is_selected and not is_correct_opt:
+                                css_classes.append('incorrect')
+                                markers.append('&#10007; Your answer')
+                            elif not is_selected and is_correct_opt:
+                                css_classes.append('correct-answer')
+                                markers.append('&#10003; Correct')
+                            cls = f' class="{" ".join(css_classes)}"' if css_classes else ''
+                            marker_html = f' <span class="marker">{" | ".join(markers)}</span>' if markers else ''
+                            questions_html += f'<div class="option"{cls}><span class="option-letter">{letter})</span> <span class="option-text">{esc(str(option))}</span>{marker_html}</div>'
+
+                    questions_html += '</div>'
+
+                # Short / Essay: show candidate's written answer
+                else:
+                    candidate_answer = q.get('candidate_answer', '')
+                    if candidate_answer:
+                        questions_html += f'<div class="candidate-answer"><strong>Answer:</strong><p>{esc(str(candidate_answer))}</p></div>'
+                    else:
+                        questions_html += '<div class="candidate-answer not-answered"><strong>Answer:</strong> <em>Not answered</em></div>'
+
+                # Feedback (if available)
+                if has_feedback and q.get('feedback'):
+                    questions_html += f'<div class="feedback"><strong>Feedback:</strong> {esc(q["feedback"])}</div>'
+
+                questions_html += '</div>'  # Close question
+                question_number += 1
+
+            questions_html += '</div>'  # Close section
+
+        # Score summary row
+        neg_display = f' | Negative: −{negative_marks}' if negative_marks else ''
+
+        html_content = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Answer Script - {esc(result_details['candidate_name'])}</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ font-family: 'Times New Roman', Times, serif; font-size: 11pt; line-height: 1.5; color: #111; background: #fff; padding: 15mm 20mm; }}
+        @media print {{
+            body {{ padding: 10mm 15mm; }}
+            .no-print {{ display: none !important; }}
+            .question {{ page-break-inside: avoid; }}
+        }}
+        .print-btn {{ position: fixed; top: 15px; right: 15px; padding: 10px 24px; background: #4f46e5; color: #fff; border: none; border-radius: 6px; font-size: 13px; cursor: pointer; z-index: 100; }}
+        .print-btn:hover {{ background: #4338ca; }}
+        .report-header {{ text-align: center; border-bottom: 2px solid #111; padding-bottom: 12px; margin-bottom: 20px; }}
+        .report-header h1 {{ font-size: 16pt; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }}
+        .report-header h2 {{ font-size: 13pt; font-weight: normal; color: #333; }}
+        .info-table {{ width: 100%; border-collapse: collapse; margin: 15px 0; }}
+        .info-table td {{ padding: 6px 12px; border: 1px solid #ccc; font-size: 10.5pt; }}
+        .info-table td:first-child {{ font-weight: bold; width: 140px; background: #f5f5f5; }}
+        .score-box {{ border: 2px solid #111; padding: 12px 20px; margin: 15px 0; text-align: center; background: #fafafa; }}
+        .score-box .score {{ font-size: 20pt; font-weight: bold; }}
+        .score-box .details {{ font-size: 10pt; color: #555; margin-top: 4px; }}
+        .section {{ margin: 20px 0; }}
+        .section-header {{ background: #f0f0f0; padding: 8px 14px; border-left: 4px solid #4f46e5; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }}
+        .section-header h2 {{ font-size: 13pt; }}
+        .section-score {{ font-size: 10pt; color: #555; }}
+        .question {{ border: 1px solid #ddd; padding: 12px 14px; margin-bottom: 10px; border-radius: 4px; }}
+        .question-header {{ display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 10pt; }}
+        .question-number {{ font-weight: bold; font-size: 11pt; }}
+        .question-type {{ color: #666; }}
+        .question-marks {{ margin-left: auto; font-weight: bold; padding: 2px 8px; border-radius: 3px; font-size: 9.5pt; }}
+        .question-marks.correct {{ background: #dcfce7; color: #166534; }}
+        .question-marks.incorrect {{ background: #fee2e2; color: #991b1b; }}
+        .question-marks.partial {{ background: #fef9c3; color: #854d0e; }}
+        .question-text {{ font-size: 11pt; margin-bottom: 8px; font-weight: 500; }}
+        .options {{ margin: 6px 0 6px 10px; }}
+        .option {{ padding: 4px 8px; margin: 3px 0; font-size: 10.5pt; border-radius: 3px; }}
+        .option.correct {{ background: #dcfce7; }}
+        .option.incorrect {{ background: #fee2e2; text-decoration: line-through; }}
+        .option.correct-answer {{ background: #f0fdf4; border: 1px dashed #22c55e; }}
+        .option-letter {{ font-weight: bold; margin-right: 4px; }}
+        .marker {{ font-size: 9pt; font-weight: bold; margin-left: 6px; }}
+        .candidate-answer {{ background: #f8fafc; border-left: 3px solid #94a3b8; padding: 8px 12px; margin: 6px 0; font-size: 10.5pt; }}
+        .candidate-answer.not-answered {{ color: #999; font-style: italic; }}
+        .candidate-answer p {{ margin-top: 4px; white-space: pre-wrap; }}
+        .feedback {{ background: #eff6ff; border-left: 3px solid #3b82f6; padding: 6px 12px; margin-top: 6px; font-size: 9.5pt; color: #1e40af; }}
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">Print / Save as PDF</button>
+
+    <div class="report-header">
+        <h1>Answer Script</h1>
+        <h2>{esc(result_details['exam_title'])}</h2>
+    </div>
+
+    <table class="info-table">
+        <tr><td>Candidate Name</td><td>{esc(result_details['candidate_name'])}</td></tr>
+        <tr><td>Candidate ID</td><td>{esc(result_details['candidate_id'])}</td></tr>
+        <tr><td>Time Taken</td><td>{esc(str(result_details.get('time_taken', 'N/A')))}</td></tr>
+        <tr><td>Submitted At</td><td>{esc(str(result_details.get('submitted_at', 'N/A')))}</td></tr>
+        <tr><td>Performance</td><td>{esc(result_details.get('performance_level', 'N/A'))}</td></tr>
+    </table>
+
+    <div class="score-box">
+        <div class="score">{result_details['obtained_marks']} / {result_details['total_marks']}</div>
+        <div class="details">{result_details['percentage']:.1f}%{neg_display} | {len(result_details['questions'])} Questions</div>
+    </div>
+
+    {questions_html}
+</body>
+</html>"""
+
         filename = generate_safe_filename(result_details['candidate_name'], result_id)
-        
+
         return Response(
             content=html_content,
             media_type="text/html",
             headers={"Content-Disposition": f'attachment; filename="{filename}"'}
         )
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error generating report: {str(e)}")
 
@@ -2190,7 +2361,7 @@ async def delete_question_image(image_id: str, session_id: str = Depends(verify_
         if success:
             # Delete physical file
             if image_url and image_url.startswith("/uploads/images/"):
-                file_path = Path("uploads") / image_url.lstrip("/uploads/")
+                file_path = Path("uploads") / image_url.removeprefix("/uploads/")
                 file_path.unlink(missing_ok=True)
             
             return {"success": True, "message": "Image deleted successfully"}
@@ -2236,7 +2407,7 @@ async def cleanup_orphaned_images(session_id: str = Depends(verify_admin_access)
         # Delete orphaned files
         deleted_count = 0
         for orphaned_url in orphaned_files:
-            file_path = Path("uploads") / orphaned_url.lstrip("/uploads/")
+            file_path = Path("uploads") / orphaned_url.removeprefix("/uploads/")
             if file_path.exists():
                 file_path.unlink()
                 deleted_count += 1

@@ -569,8 +569,8 @@ class ExamDatabase:
                 return False
         except sqlite3.Error as e:
             print(f"❌ Error checking if candidate submitted exam: {e}")
-            # Return False on error to allow the candidate to proceed (fail-open for usability)
-            return False
+            # Fail-closed: block the candidate on DB error to prevent duplicate submissions
+            return True
 
     def has_candidate_active_session(self, exam_id: str, candidate_id: str) -> Optional[str]:
         """Check if a candidate has an active (non-submitted) session for an exam.
@@ -1371,7 +1371,7 @@ class ExamDatabase:
                             if row[16]:
                                 try:
                                     correct_answers = json.loads(row[16])
-                                except:
+                                except (json.JSONDecodeError, TypeError):
                                     correct_answers = [row[11]] if row[11] is not None else []
                             question['correct_answers'] = correct_answers
 
@@ -2128,7 +2128,7 @@ class ExamDatabase:
                     if row[7]:
                         try:
                             neg_config = json.loads(row[7]) if isinstance(row[7], str) else row[7]
-                        except:
+                        except (json.JSONDecodeError, TypeError):
                             pass
 
                     results.append({
@@ -2215,7 +2215,7 @@ class ExamDatabase:
                                     answer_data['selected_option_text'] = options[idx]
                             if ans_row[9] is not None and 0 <= ans_row[9] < len(options):
                                 answer_data['correct_option_text'] = options[ans_row[9]]
-                        except:
+                        except (json.JSONDecodeError, TypeError, ValueError, IndexError):
                             pass
 
                     answers.append(answer_data)

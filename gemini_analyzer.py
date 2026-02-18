@@ -237,6 +237,7 @@ class GeminiAnalyzer:
             mcq_options_count  # Pass MCQ options count
         )
 
+        response = None
         try:
             # Use display name for custom sections in logging
             log_name = section_config.get('display_name', section_type) if section_config.get('is_custom') else section_type
@@ -266,7 +267,8 @@ class GeminiAnalyzer:
 
         except json.JSONDecodeError as e:
             print(f"❌ JSON parsing error for {log_name}: {str(e)}")
-            print(f"Raw response: {response.text[:500]}...")
+            raw = response.text[:500] if response else 'No response'
+            print(f"Raw response: {raw}...")
             return None
         except Exception as e:
             print(f"❌ Error generating {log_name} questions: {str(e)}")
