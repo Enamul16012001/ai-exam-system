@@ -1476,6 +1476,7 @@ async def download_result_pdf(request: Request, session_id: str = Depends(verify
             raise HTTPException(status_code=404, detail="Result not found")
 
         esc = html_module.escape
+        fmt = lambda v: format_text(v)  # escape + convert **bold** to <strong>
         has_feedback = result_details.get('has_feedback', True)
         negative_marks = result_details.get('negative_marks', 0)
 
@@ -1530,7 +1531,7 @@ async def download_result_pdf(request: Request, session_id: str = Depends(verify
                         <span class="question-type">[{esc(q_type)}]</span>
                         <span class="question-marks {status_class}">{marks_obtained}/{marks_total}{f' (−{neg_applied})' if neg_applied else ''} — {status_label}</span>
                     </div>
-                    <div class="question-text">{esc(q.get('question_text', ''))}</div>
+                    <div class="question-text">{fmt(q.get('question_text', ''))}</div>
                 """
 
                 # MCQ: show options with correct/selected highlighting
@@ -1568,7 +1569,7 @@ async def download_result_pdf(request: Request, session_id: str = Depends(verify
                                 markers.append('&#10003; Correct')
                             cls = f' class="{" ".join(css_classes)}"' if css_classes else ''
                             marker_html = f' <span class="marker">{" | ".join(markers)}</span>' if markers else ''
-                            questions_html += f'<div class="option"{cls}><span class="option-letter">{letter})</span> <span class="option-text">{esc(str(option))}</span>{marker_html}</div>'
+                            questions_html += f'<div class="option"{cls}><span class="option-letter">{letter})</span> <span class="option-text">{fmt(str(option))}</span>{marker_html}</div>'
                     else:
                         # Single-select MCQ
                         candidate_answer = q.get('candidate_answer')
@@ -1592,7 +1593,7 @@ async def download_result_pdf(request: Request, session_id: str = Depends(verify
                                 markers.append('&#10003; Correct')
                             cls = f' class="{" ".join(css_classes)}"' if css_classes else ''
                             marker_html = f' <span class="marker">{" | ".join(markers)}</span>' if markers else ''
-                            questions_html += f'<div class="option"{cls}><span class="option-letter">{letter})</span> <span class="option-text">{esc(str(option))}</span>{marker_html}</div>'
+                            questions_html += f'<div class="option"{cls}><span class="option-letter">{letter})</span> <span class="option-text">{fmt(str(option))}</span>{marker_html}</div>'
 
                     questions_html += '</div>'
 
@@ -1600,13 +1601,13 @@ async def download_result_pdf(request: Request, session_id: str = Depends(verify
                 else:
                     candidate_answer = q.get('candidate_answer', '')
                     if candidate_answer:
-                        questions_html += f'<div class="candidate-answer"><strong>Answer:</strong><p>{esc(str(candidate_answer))}</p></div>'
+                        questions_html += f'<div class="candidate-answer"><strong>Answer:</strong><p>{fmt(str(candidate_answer))}</p></div>'
                     else:
                         questions_html += '<div class="candidate-answer not-answered"><strong>Answer:</strong> <em>Not answered</em></div>'
 
                 # Feedback (if available)
                 if has_feedback and q.get('feedback'):
-                    questions_html += f'<div class="feedback"><strong>Feedback:</strong> {esc(q["feedback"])}</div>'
+                    questions_html += f'<div class="feedback"><strong>Feedback:</strong> {fmt(q["feedback"])}</div>'
 
                 questions_html += '</div>'  # Close question
                 question_number += 1
@@ -1727,6 +1728,7 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
 
         # Generate section HTML (escape all user-supplied data)
         esc = html_module.escape
+        fmt = lambda v: format_text(v)  # escape + convert **bold** to <strong>
         sections_html = ""
         question_number = 1
 
@@ -1756,7 +1758,7 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
                         <span class="question-type">[{esc(q_type)}]</span>
                         <span class="question-marks">[{marks} Mark{'s' if marks != 1 else ''}]</span>
                     </div>
-                    <div class="question-text">{esc(question.get('question', ''))}</div>
+                    <div class="question-text">{fmt(question.get('question', ''))}</div>
                 """
 
                 # Add images if present
@@ -1788,7 +1790,7 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
                         sections_html += f"""
                         <div class="option{correct_class}">
                             <span class="option-letter">{option_letter})</span>
-                            <span class="option-text">{esc(str(option))}</span>
+                            <span class="option-text">{fmt(str(option))}</span>
                             {' <span class="correct-mark">✓</span>' if include_answers and is_correct else ''}
                         </div>
                         """
@@ -1800,7 +1802,7 @@ async def download_exam_questions(exam_id: str, request: Request, session_id: st
                         sections_html += f"""
                         <div class="expected-answer">
                             <strong>Expected Answer:</strong>
-                            <p>{esc(question['expected_answer'])}</p>
+                            <p>{fmt(question['expected_answer'])}</p>
                         </div>
                         """
                     else:
