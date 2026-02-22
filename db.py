@@ -11,16 +11,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 import os
 
-
-def _get_performance_level(percentage: float) -> str:
-    """Get performance level based on percentage (local copy to avoid circular import)"""
-    if percentage >= 85:
-        return "Excellent"
-    elif percentage >= 70:
-        return "Good"
-    elif percentage >= 50:
-        return "Average"
-    return "Poor"
+from utils import get_performance_level as _get_performance_level
 
 
 class ExamDatabase:
@@ -1203,47 +1194,6 @@ class ExamDatabase:
                 return True
         except sqlite3.Error as e:
             print(f"❌ Error saving exam result: {e}")
-            return False
-
-    def save_exam_result_no_feedback(self, session_id: str, exam_id: str, candidate_name: str, 
-                                    candidate_id: str, answers: Dict, time_taken: str) -> bool:
-        """Save exam submission without detailed evaluation"""
-        try:
-            result_id = str(uuid.uuid4())
-            with sqlite3.connect(self.db_path) as conn:
-                cursor = conn.cursor()
-                
-                # Save basic result without evaluation
-                cursor.execute('''
-                    INSERT INTO exam_results (id, session_id, exam_id, candidate_name, candidate_id,
-                                            total_marks, obtained_marks, negative_marks, percentage, performance_level, 
-                                            time_taken, has_feedback)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    result_id, session_id, exam_id, candidate_name, candidate_id,
-                    0, 0, 0, 0, "Pending Review", time_taken, False
-                ))
-                
-                # Save answers without evaluation
-                for question_id, answer in answers.items():
-                    answer_id = str(uuid.uuid4())
-                    cursor.execute('''
-                        INSERT INTO candidate_answers (id, result_id, question_id, candidate_answer,
-                                                     marks_obtained, negative_marks_applied, is_correct, feedback, evaluation_details)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (
-                        answer_id, result_id, question_id, answer, 0, 0, None, 
-                        "Answer submitted - awaiting review", "No evaluation provided"
-                    ))
-                
-                # End the live session
-                self.end_live_session(session_id)
-                
-                conn.commit()
-                print(f"✅ Exam submission saved for {candidate_name} (no feedback mode)")
-                return True
-        except sqlite3.Error as e:
-            print(f"❌ Error saving exam result without feedback: {e}")
             return False
 
     def get_exam_results(self, exam_id: str) -> List[Dict]:

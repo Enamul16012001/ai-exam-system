@@ -7,3 +7,6 @@ uploads/
 .venv
 env/
 .venv/
+exam_system.db
+exam_system.db-shm
+exam_system.db-wal

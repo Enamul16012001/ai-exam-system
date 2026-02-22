@@ -57,10 +57,17 @@ templates = Jinja2Templates(directory="templates", auto_reload=True)
 # --- Custom Jinja2 Filters ---
 
 def format_text(value):
-    """Convert **bold** markdown to <strong> tags, safely escaped."""
+    """Convert common markdown to HTML tags, safely escaped."""
     from markupsafe import Markup, escape
     text = str(escape(value))
+    # **bold** → <strong>
     text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    # *italic* → <em> (single asterisk around text, not bullet points)
+    text = re.sub(r'(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'<em>\1</em>', text)
+    # Markdown bullet lines: "* item" or "- item" (with optional leading spaces) → bullet
+    text = re.sub(r'(?m)^\s*[\*\-]\s+', '• ', text)
+    # Convert newlines to <br> for proper line breaks
+    text = text.replace('\n', '<br>')
     return Markup(text)
 
 templates.env.filters["format_text"] = format_text
